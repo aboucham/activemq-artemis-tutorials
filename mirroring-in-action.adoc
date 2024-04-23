@@ -1,0 +1,16 @@
+= Mirroring in Action for AMQ Broker on OpenShift
+We will dive deep into configuring, implementing, and optimizing ActiveMQ Artemis Broker Mirroring. In this hands-on demo, you'll learn how to set up mirroring between ActiveMQ Artemis brokers running on OpenShift, explore mirroring behavior in various scenarios, and discover best practices for ensuring fault tolerance and data redundancy in your messaging infrastructure.
+
+== Chapters:
+
+=== 1. Introduction to ActiveMQ Artemis Broker Mirroring
+
+=== 2. Setting Up Initial Environment
+
+=== 3. Configuring Mirroring and Understanding Pre-existing Messages
+
+=== 4. Mirroring in a Scale-Up Scenario
+
+=== 5. Exploring Address Filtering
+
+=== 6. Troubleshooting Mirroring
