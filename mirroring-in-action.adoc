@@ -231,29 +231,34 @@ oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor al
 
 === 6. Troubleshooting Mirroring
 
-Event: Creating Address:
+Stop the acceptor on the `DR` to simulate a Network Connection issue between Production and DR. Then check the queue `$ACTIVEMQ_ARTEMIS_MIRROR_DR`:
+Three messages should in the queue will correspond to the following events:
+
+1.Event: Creating Address:
 
 [source, yaml,indent=0]
 ----
 export POD=broker-prod-0
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address create --name A --address A --user admin --password admin --acceptor all
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address create --name fr.nantes --address fr.nantes --user admin --password admin --acceptor all
 ----
 
-Event: Creating Queue:
-
-[source, yaml,indent=0]
-----
-export POD=broker-prod-0
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis queue create --name A --address A --user admin --password admin --acceptor all
-----
-
-Event Producing Messages:
+2.Event: Creating Queue:
 
 [source, yaml,indent=0]
 ----
 export POD=broker-prod-0
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://A --user admin --password admin --message-count 1 --message 1 
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis queue create --name fr.nantes --address fr.nantes --user admin --password admin --acceptor all
 ----
+
+3.Event Producing Messages:
+
+[source, yaml,indent=0]
+----
+export POD=broker-prod-0
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://fr.nantes --user admin --password admin --message-count 1 --message 1 
+----
+
+Once the acceptor starts , the connection will be established and the DR broker will treat these messages accordingly as mirror events and perform the appropriate operations at the DR broker.
 
 The above broker properties would create two address testQueue and testTopic.
 With command
