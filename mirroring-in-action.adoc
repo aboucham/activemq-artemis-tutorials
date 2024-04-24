@@ -161,3 +161,19 @@ Event Producing Messages:
 export POD=broker-prod-0
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://A --user admin --password admin --message-count 1 --message 1 
 ----
+
+The above broker properties would create two address testQueue and testTopic.
+With command
+
+[source, yaml,indent=0]
+----
+export POD=broker-prod-0
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis queue stat --acceptor all --user admin --password admin
+----
+excuted on the pod it is possible to display the created ANYCAST queue and confirm that it has been created. To confirm that a MULTICAST address has been created use command
+
+[source, yaml,indent=0]
+----
+export POD=broker-prod-0
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
+----
