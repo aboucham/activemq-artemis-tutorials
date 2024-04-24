@@ -138,15 +138,15 @@ oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --
 [source, yaml,indent=0]
 ----
     - >-
-      AMQPConnections.target.uri=tcp://broker-dr-broker-all-0-svc.dr.svc.cluster.local:61616
-    - AMQPConnections.target.retryInterval=5000
-    - AMQPConnections.target.user=admin
-    - AMQPConnections.target.password=admin
-    - AMQPConnections.target.connectionElements.mirror.type=MIRROR
+      AMQPConnections.dr.uri=tcp://broker-dr-broker-all-0-svc.dr.svc.cluster.local:61616
+    - AMQPConnections.dr.retryInterval=5000
+    - AMQPConnections.dr.user=admin
+    - AMQPConnections.dr.password=admin
+    - AMQPConnections.dr.connectionElements.mirror.type=MIRROR
     - >-
-      AMQPConnections.target.connectionElements.mirror.messageAcknowledgements=true
-    - AMQPConnections.target.connectionElements.mirror.queueCreation=true
-    - AMQPConnections.target.connectionElements.mirror.queueRemoval=true
+      AMQPConnections.dr.connectionElements.mirror.messageAcknowledgements=true
+    - AMQPConnections.dr.connectionElements.mirror.queueCreation=true
+    - AMQPConnections.dr.connectionElements.mirror.queueRemoval=true
 ----
 
 [source, yaml,indent=0]
@@ -175,15 +175,15 @@ Update Mirroring uri configuration by using the env variable `${STATEFUL_SET_ORD
 [source, yaml,indent=0]
 ----
     - >-
-      AMQPConnections.target.uri=tcp://broker-dr-broker-all-${STATEFUL_SET_ORDINAL}-svc.dr.svc.cluster.local:61616
-    - AMQPConnections.target.retryInterval=5000
-    - AMQPConnections.target.user=admin
-    - AMQPConnections.target.password=admin
-    - AMQPConnections.target.connectionElements.mirror.type=MIRROR
+      AMQPConnections.dr.uri=tcp://broker-dr-broker-all-${STATEFUL_SET_ORDINAL}-svc.dr.svc.cluster.local:61616
+    - AMQPConnections.dr.retryInterval=5000
+    - AMQPConnections.dr.user=admin
+    - AMQPConnections.dr.password=admin
+    - AMQPConnections.dr.connectionElements.mirror.type=MIRROR
     - >-
-      AMQPConnections.target.connectionElements.mirror.messageAcknowledgements=true
-    - AMQPConnections.target.connectionElements.mirror.queueCreation=true
-    - AMQPConnections.target.connectionElements.mirror.queueRemoval=true
+      AMQPConnections.dr.connectionElements.mirror.messageAcknowledgements=true
+    - AMQPConnections.dr.connectionElements.mirror.queueCreation=true
+    - AMQPConnections.dr.connectionElements.mirror.queueRemoval=true
 ----
 
 Then, change the replicas on the DR env (mirrored env), then on the production env:
@@ -212,16 +212,16 @@ For instance: `addressFilter=fr.,!eu.` allow to include/mirror only adresses/que
 [source, yaml,indent=0]
 ----
      - >-
-      AMQPConnections.target.uri=tcp://broker-dr-broker-all-${STATEFUL_SET_ORDINAL}-svc.dr.svc.cluster.local:61616
-    - AMQPConnections.target.retryInterval=5000
-    - AMQPConnections.target.user=admin
-    - AMQPConnections.target.password=admin
-    - AMQPConnections.target.connectionElements.mirror.type=MIRROR
+      AMQPConnections.dr.uri=tcp://broker-dr-broker-all-${STATEFUL_SET_ORDINAL}-svc.dr.svc.cluster.local:61616
+    - AMQPConnections.dr.retryInterval=5000
+    - AMQPConnections.dr.user=admin
+    - AMQPConnections.dr.password=admin
+    - AMQPConnections.dr.connectionElements.mirror.type=MIRROR
     - >-
-      AMQPConnections.target.connectionElements.mirror.messageAcknowledgements=true
-    - AMQPConnections.target.connectionElements.mirror.queueCreation=true
-    - AMQPConnections.target.connectionElements.mirror.queueRemoval=true
-    - 'AMQPConnections.target.connectionElements.mirror.addressFilter=fr.,!eu.'
+      AMQPConnections.dr.connectionElements.mirror.messageAcknowledgements=true
+    - AMQPConnections.dr.connectionElements.mirror.queueCreation=true
+    - AMQPConnections.dr.connectionElements.mirror.queueRemoval=true
+    - 'AMQPConnections.dr.connectionElements.mirror.addressFilter=fr.,!eu.'
 ----
 
 Test:
@@ -231,16 +231,16 @@ Create address `fr.paris` and `eu.uk`:
 [source, yaml,indent=0]
 ----
 export POD=broker-prod-ss-0
-oc exec -n production -i $POD -- /home/jboss/amq-broker/bin/artemis address create --name fr.paris --address fr.paris --user admin --password admin --acceptor all
-oc exec -n production -i $POD -- /home/jboss/amq-broker/bin/artemis address create --name eu.uk --address eu.uk --user admin --password admin --acceptor all
+oc exec -n production -i $POD -- /home/jboss/amq-broker/bin/artemis address create --acceptor all --anycast --no-multicast --name fr.paris --user admin --password admin 
+oc exec -n production -i $POD -- /home/jboss/amq-broker/bin/artemis address create --acceptor all --anycast --no-multicast --name eu.uk --user admin --password admin 
 ----
 
 Check on the DR env:
 
 [source, yaml,indent=0]
 ----
-export POD=broker-prod-ss-0
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
+export POD=broker-dr-ss-0
+oc exec -n dr -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
 ----
 
 
