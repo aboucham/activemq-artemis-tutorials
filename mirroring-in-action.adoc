@@ -231,8 +231,22 @@ oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor al
 
 === 5. Mirroring:OverSSL (route)
 
-For one way-tls
+On the target (`DR` env), you need to secure the acceptor `amqps` in order to be exposed outside openshift. 
 
+[source, yaml,indent=0]
+----
+   - expose: true
+      name: amqps
+      port: 5672
+      protocols: amqps
+      sslEnabled: true
+      sslSecret: mytlssecret
+----
+
+You need to upload/Mount the certificates on the production env and change the uri to incluse truststore/keystore cert and turststore/keystore password:
+
+For `one way-tls`:
+ 
 [source, yaml,indent=0]
 ----
     - >-
@@ -248,7 +262,7 @@ For one way-tls
     - 'AMQPConnections.target.connectionElements.mirror.addressFilter=fr.,!eu.'
 ----
 
-For two way-tls
+For `two way-tls`:
 
 [source, yaml,indent=0]
 ----
