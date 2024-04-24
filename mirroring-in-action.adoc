@@ -3,11 +3,134 @@ We will dive deep into configuring, implementing, and optimizing ActiveMQ Artemi
 
 == Chapters:
 
-=== 1. Introduction to ActiveMQ Artemis Broker Mirroring
+Environment Setup:
+
+- Red Hat Integration - AMQ Broker for RHEL 8 (Multiarch) : 7.11.6-opr-2 provided by Red Hat
+
+Prerequisites:
+
+- Install AMQ Broker Operator:  from OperatorHub
+- Generate certificates using keytool, create a secret for one way TLS: https://access.redhat.com/documentation/en-us/red_hat_amq_broker/7.11/html-single/deploying_amq_broker_on_openshift/index#proc-br-configuring-one-way-tls_broker-ocp[4.10.2.2. Configuring one-way TLS]
 
 === 2. Setting Up Initial Environment
 
+- Production Env:
+
+Create the 'production' namespace: `oc new-project production`
+
+Create AMQ Broker using activemqArtemis CR YAML configuration
+
+[source, yaml,indent=0]
+----
+oc create -f - <<EOF
+apiVersion: broker.amq.io/v1beta1
+kind: ActiveMQArtemis
+metadata:
+ name: broker-prod
+ namespace: production
+spec:
+  acceptors:
+    - expose: true
+      name: all
+      port: 61616
+      protocols: all
+      sslEnabled: false
+    - expose: true
+      name: amqp
+      port: 5672
+      protocols: amqp
+      sslEnabled: false
+  adminPassword: admin
+  adminUser: admin
+  brokerProperties:
+    - maxDiskUsage=85
+    - clusterConfigurations.my-cluster.producerWindowSize=-1
+    - 'addressSettings.#.redeliveryMultiplier=5'
+    - criticalAnalyzer=true
+    - criticalAnalyzerTimeout=6000
+    - criticalAnalyzerCheckPeriod=-1     
+    - criticalAnalyzerPolicy=LOG
+  console:
+    expose: true
+  deploymentPlan:
+    size: 1
+    persistenceEnabled: true
+    requireLogin: false
+    messageMigration: true
+    managementRBACEnabled: true
+    journalType: aio
+    enableMetricsPlugin: true
+    jolokiaAgentEnabled: true
+    clustered: true
+    image: placeholder
+EOF
+----
+
+- DR Env:
+
+Create the 'DR' namespace: `oc new-project dr`
+
+Create AMQ Broker using activemqArtemis CR YAML configuration
+
+[source, yaml,indent=0]
+----
+oc create -f - <<EOF
+apiVersion: broker.amq.io/v1beta1
+kind: ActiveMQArtemis
+metadata:
+ name: broker-dr
+ namespace: dr
+spec:
+  acceptors:
+    - expose: true
+      name: all
+      port: 61616
+      protocols: all
+      sslEnabled: false
+    - expose: true
+      name: amqp
+      port: 5672
+      protocols: amqp
+      sslEnabled: false
+  adminPassword: admin
+  adminUser: admin
+  brokerProperties:
+    - maxDiskUsage=85
+    - clusterConfigurations.my-cluster.producerWindowSize=-1
+    - 'addressSettings.#.redeliveryMultiplier=5'
+    - criticalAnalyzer=true
+    - criticalAnalyzerTimeout=6000
+    - criticalAnalyzerCheckPeriod=-1     
+    - criticalAnalyzerPolicy=LOG
+  console:
+    expose: true
+  deploymentPlan:
+    size: 1
+    persistenceEnabled: true
+    requireLogin: false
+    messageMigration: true
+    managementRBACEnabled: true
+    journalType: aio
+    enableMetricsPlugin: true
+    jolokiaAgentEnabled: true
+    clustered: true
+    image: placeholder
+EOF
+----
+
 === 3. Configuring Mirroring and Understanding Pre-existing Messages
+
+`oc new-project production`
+
+We will create `queue A` and send `3 messages` before establishing `Mirroring Connections`:
+
+[source, yaml,indent=0]
+----
+export POD=broker-prod-0
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://A --user admin --password admin --message-count 1 --message 1 
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://A --user admin --password admin --message-count 1 --message 2
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://A --user admin --password admin --message-count 1 --message 3
+----
 
 === 4. Mirroring in a Scale-Up Scenario
 
