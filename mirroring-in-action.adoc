@@ -266,7 +266,38 @@ For two way-tls
 ----
 
 
-=== 6. Troubleshooting Mirroring
+=== 6. Mirror: One to Many
+
+On the production env: `broker-prod` , we will connect to `DR` env `broker-dr` and `BACKUP_DR` env ``broker-backup-dr``:
+
+[source, yaml,indent=0]
+----
+    - >-
+      AMQPConnections.dr.uri=tcp://broker-dr-amqp-${STATEFUL_SET_ORDINAL}-svc-rte-amqbroker-dr.apps:443?sslEnabled=true;trustStorePath=/amq/extra/secrets/ex-aao-amqp-secret/client.ts;trustStorePassword=password;verifyHost=false
+    - AMQPConnections.dr.retryInterval=5000
+    - AMQPConnections.dr.user=admin
+    - AMQPConnections.dr.password=admin
+    - AMQPConnections.dr.connectionElements.mirror.type=MIRROR
+    - >-
+      AMQPConnections.dr.connectionElements.mirror.messageAcknowledgements=true
+    - AMQPConnections.dr.connectionElements.mirror.queueCreation=true
+    - AMQPConnections.dr.connectionElements.mirror.queueRemoval=true
+    - 'AMQPConnections.dr.connectionElements.mirror.addressFilter=fr.,!eu.'
+
+    - >-
+      AMQPConnections.backup-dr.uri=tcp://broker-backup-dr-amqp-${STATEFUL_SET_ORDINAL}-svc-rte-amqbroker-dr.apps:443?sslEnabled=true;trustStorePath=/amq/extra/secrets/ex-aao-amqp-secret/client.ts;trustStorePassword=password;verifyHost=false
+    - AMQPConnections.backup-dr.retryInterval=5000
+    - AMQPConnections.backup-dr.user=admin
+    - AMQPConnections.backup-dr.password=admin
+    - AMQPConnections.backup-dr.connectionElements.mirror.type=MIRROR
+    - >-
+      AMQPConnections.backup-dr.connectionElements.mirror.messageAcknowledgements=true
+    - AMQPConnections.backup-dr.connectionElements.mirror.queueCreation=true
+    - AMQPConnections.backup-dr.connectionElements.mirror.queueRemoval=true
+    - 'AMQPConnections.backup-dr.connectionElements.mirror.addressFilter=fr.,!eu.'
+----
+
+=== 7. Troubleshooting Mirroring
 
 Stop the acceptor on the `DR` to simulate a Network Connection issue between Production and DR. Then check the queue `$ACTIVEMQ_ARTEMIS_MIRROR_DR`:
 Three messages should in the queue will correspond to the following events:
