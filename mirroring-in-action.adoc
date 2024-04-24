@@ -302,7 +302,15 @@ For `two way-tls`:
     - 'AMQPConnections.target.connectionElements.mirror.addressFilter=fr.,!eu.'
 ----
 
+In the log of broker-prod-ss-0 you should see the following lines:
 
+[source, yaml,indent=0]
+----
+broker-prod-ss-0 broker-prod-container 2024-04-24 16:34:32,151 INFO  [org.apache.activemq.artemis.protocol.amqp.logger] AMQ111003:
+broker-prod-ss-0 broker-prod-container *******************************************************************************************************************************
+broker-prod-ss-0 broker-prod-container Connected on Server AMQP Connection dr on broker-dr-amqp-0-svc-rte-dr.apps.abouchama-amq5.emea.aws.cee.support:443 after 0 retries
+broker-prod-ss-0 broker-prod-container *******************************************************************************************************************************
+----
 === 6. Mirror: One to Many
 
 On the production env: `broker-prod` , we will connect to `DR` env `broker-dr` and `BACKUP_DR` env ``broker-backup-dr``:
