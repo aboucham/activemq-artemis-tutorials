@@ -1,0 +1,41 @@
+apiVersion: broker.amq.io/v1beta1
+kind: ActiveMQArtemis
+metadata:
+  name: broker-backup-dr
+  namespace: dr
+spec:
+  acceptors:
+    - expose: true
+      name: all
+      port: 61616
+      protocols: all
+      sslEnabled: false
+    - expose: true
+      name: amqp
+      port: 5672
+      protocols: amqp
+      sslEnabled: true
+      sslSecret: mytlssecret
+  adminPassword: admin
+  adminUser: admin
+  brokerProperties:
+    - maxDiskUsage=85
+    - clusterConfigurations.my-cluster.producerWindowSize=-1
+    - 'addressSettings.#.redeliveryMultiplier=5'
+    - criticalAnalyzer=true
+    - criticalAnalyzerTimeout=6000
+    - criticalAnalyzerCheckPeriod=-1
+    - criticalAnalyzerPolicy=LOG
+  console:
+    expose: true
+  deploymentPlan:
+    size: 1
+    persistenceEnabled: true
+    requireLogin: false
+    messageMigration: true
+    managementRBACEnabled: true
+    journalType: aio
+    enableMetricsPlugin: true
+    jolokiaAgentEnabled: true
+    clustered: false
+    image: placeholder
