@@ -12,7 +12,7 @@ Prerequisites:
 - Install AMQ Broker Operator:  from OperatorHub
 - Generate certificates using keytool, create a secret for one way TLS: https://access.redhat.com/documentation/en-us/red_hat_amq_broker/7.11/html-single/deploying_amq_broker_on_openshift/index#proc-br-configuring-one-way-tls_broker-ocp[4.10.2.2. Configuring one-way TLS]
 
-=== 2. Setting Up Initial Environment
+=== 1. Setting Up Initial Environment
 
 - Production Env:
 
@@ -118,7 +118,7 @@ spec:
 EOF
 ----
 
-=== 3. Configuring Mirroring and Understanding Pre-existing Messages
+=== 2. Configuring Mirroring and Understanding Pre-existing Messages
 
 `oc project production`
 
@@ -161,7 +161,7 @@ The broker will only mirror messages arriving from the point in time the mirror 
 Previously existing messages will not be forwarded to other brokers.
 
 
-=== 4. Mirroring in a Scale-Up Scenario
+=== 3. Mirroring in a Scale-Up Scenario
 
 Update Mirroring uri configuration by using the env variable `${STATEFUL_SET_ORDINAL}` , this env var provide sequential identities for pod replicas, and when using OrderedReady Pod management, Pods are created from ordinal index 0 up to N-1.
 
@@ -187,7 +187,7 @@ kubectl -n dr scale ActiveMQArtemis broker-dr --replicas 2
 kubectl -n production scale ActiveMQArtemis broker-dr --replicas 2
 ----
 
-=== 5. Exploring Address Filtering
+=== 4. Exploring Address Filtering
 
 Update Mirroring uri configuration by using the addressFilter.
 AdressFilter is An optional comma-separated list of `inclusion and/or exclusion` filter entries used to govern which addresses (and related queues) mirroring events will be created for on this broker-connection.
@@ -226,6 +226,43 @@ Check on the DR env:
 ----
 export POD=broker-prod-0
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
+----
+
+
+=== 5. Mirroring:OverSSL (route)
+
+For one way-tls
+
+[source, yaml,indent=0]
+----
+    - >-
+      AMQPConnections.target.uri=tcp://broker-dr-amqp-${STATEFUL_SET_ORDINAL}-svc-rte-amqbroker-dr.apps:443?sslEnabled=true;trustStorePath=/amq/extra/secrets/ex-aao-amqp-secret/client.ts;trustStorePassword=password;verifyHost=false
+    - AMQPConnections.target.retryInterval=5000
+    - AMQPConnections.target.user=admin
+    - AMQPConnections.target.password=admin
+    - AMQPConnections.target.connectionElements.mirror.type=MIRROR
+    - >-
+      AMQPConnections.target.connectionElements.mirror.messageAcknowledgements=true
+    - AMQPConnections.target.connectionElements.mirror.queueCreation=true
+    - AMQPConnections.target.connectionElements.mirror.queueRemoval=true
+    - 'AMQPConnections.target.connectionElements.mirror.addressFilter=fr.,!eu.'
+----
+
+For two way-tls
+
+[source, yaml,indent=0]
+----
+    - >-
+      AMQPConnections.target.uri=tcp://broker-dr-amqp-${STATEFUL_SET_ORDINAL}-svc-rte-amqbroker-dr.apps:443?sslEnabled=true;trustStorePath=/amq/extra/secrets/ex-aao-amqp-secret/client.ts;trustStorePassword=password;keyStorePath=/amq/extra/secrets/ex-aao-amqp-secret/broker.ks;keyStorePassword=password;verifyHost=false
+    - AMQPConnections.target.retryInterval=5000
+    - AMQPConnections.target.user=admin
+    - AMQPConnections.target.password=admin
+    - AMQPConnections.target.connectionElements.mirror.type=MIRROR
+    - >-
+      AMQPConnections.target.connectionElements.mirror.messageAcknowledgements=true
+    - AMQPConnections.target.connectionElements.mirror.queueCreation=true
+    - AMQPConnections.target.connectionElements.mirror.queueRemoval=true
+    - 'AMQPConnections.target.connectionElements.mirror.addressFilter=fr.,!eu.'
 ----
 
 
