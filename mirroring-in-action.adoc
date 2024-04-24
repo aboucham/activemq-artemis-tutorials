@@ -250,10 +250,10 @@ On the target (`DR` env), you need to secure the acceptor `amqps` in order to be
 
 [source, yaml,indent=0]
 ----
-   - expose: true
-      name: amqps
+    - expose: true
+      name: amqp
       port: 5672
-      protocols: amqps
+      protocols: amqp
       sslEnabled: true
       sslSecret: mytlssecret
 ----
@@ -262,9 +262,10 @@ You need to upload/Mount the certificates on the production env and change the u
 
 [source, yaml,indent=0]
 ----
- extraMounts:
-      secrets:
-        - mytlssecret
+  deploymentPlan:
+    extraMounts:
+          secrets:
+            - mytlssecret
 ----
 
 For `one way-tls`:
@@ -272,16 +273,16 @@ For `one way-tls`:
 [source, yaml,indent=0]
 ----
     - >-
-      AMQPConnections.target.uri=tcp://broker-dr-amqp-${STATEFUL_SET_ORDINAL}-svc-rte-amqbroker-dr.apps:443?sslEnabled=true;trustStorePath=/amq/extra/secrets/ex-aao-amqp-secret/client.ts;trustStorePassword=password;verifyHost=false
-    - AMQPConnections.target.retryInterval=5000
-    - AMQPConnections.target.user=admin
-    - AMQPConnections.target.password=admin
-    - AMQPConnections.target.connectionElements.mirror.type=MIRROR
+      AMQPConnections.dr.uri=tcp://broker-dr-amqp-${STATEFUL_SET_ORDINAL}-svc-rte-dr.apps.abouchama-amq5.emea.aws.cee.support:443?sslEnabled=true;trustStorePath=/amq/extra/secrets/mytlssecret/client.ts;trustStorePassword=password;verifyHost=false
+    - AMQPConnections.dr.retryInterval=5000
+    - AMQPConnections.dr.user=admin
+    - AMQPConnections.dr.password=admin
+    - AMQPConnections.dr.connectionElements.mirror.type=MIRROR
     - >-
-      AMQPConnections.target.connectionElements.mirror.messageAcknowledgements=true
-    - AMQPConnections.target.connectionElements.mirror.queueCreation=true
-    - AMQPConnections.target.connectionElements.mirror.queueRemoval=true
-    - 'AMQPConnections.target.connectionElements.mirror.addressFilter=fr.,!eu.'
+      AMQPConnections.dr.connectionElements.mirror.messageAcknowledgements=true
+    - AMQPConnections.dr.connectionElements.mirror.queueCreation=true
+    - AMQPConnections.dr.connectionElements.mirror.queueRemoval=true
+    - 'AMQPConnections.dr.connectionElements.mirror.addressFilter=fr.,!eu.'
 ----
 
 For `two way-tls`:
