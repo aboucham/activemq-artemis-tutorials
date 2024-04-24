@@ -209,6 +209,25 @@ For instance: `addressFilter=fr.,!eu.` allow to include/mirror only adresses/que
     - 'AMQPConnections.target.connectionElements.mirror.addressFilter=fr.,!eu.'
 ----
 
+Test:
+
+Create address `fr.paris` and `eu.uk`:
+
+[source, yaml,indent=0]
+----
+export POD=broker-prod-0
+oc exec -n production -i $POD -- /home/jboss/amq-broker/bin/artemis address create --name fr.paris --address fr.paris --user admin --password admin --acceptor all
+oc exec -n production -i $POD -- /home/jboss/amq-broker/bin/artemis address create --name eu.uk --address eu.uk --user admin --password admin --acceptor all
+----
+
+Check on the DR env:
+
+[source, yaml,indent=0]
+----
+export POD=broker-prod-0
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
+----
+
 
 === 6. Troubleshooting Mirroring
 
