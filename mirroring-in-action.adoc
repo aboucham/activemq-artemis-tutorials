@@ -120,7 +120,7 @@ EOF
 
 === 3. Configuring Mirroring and Understanding Pre-existing Messages
 
-`oc new-project production`
+`oc project production`
 
 We will create `queue A` and send `3 messages` before establishing `Mirroring Connections`:
 
@@ -137,3 +137,27 @@ oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --
 === 5. Exploring Address Filtering
 
 === 6. Troubleshooting Mirroring
+
+Event: Creating Address:
+
+[source, yaml,indent=0]
+----
+export POD=broker-prod-0
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address create --name A --address A --user admin --password admin --acceptor all
+----
+
+Event: Creating Queue:
+
+[source, yaml,indent=0]
+----
+export POD=broker-prod-0
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis queue create --name A --address A --user admin --password admin --acceptor all
+----
+
+Event Producing Messages:
+
+[source, yaml,indent=0]
+----
+export POD=broker-prod-0
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://A --user admin --password admin --message-count 1 --message 1 
+----
