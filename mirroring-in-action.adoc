@@ -175,7 +175,7 @@ Update Mirroring uri configuration by using the env variable `${STATEFUL_SET_ORD
 [source, yaml,indent=0]
 ----
     - >-
-      AMQPConnections.target.uri=tcp://target-broker-all-${STATEFUL_SET_ORDINAL}-svc.dr.svc.cluster.local:61616
+      AMQPConnections.target.uri=tcp://broker-dr-broker-all-${STATEFUL_SET_ORDINAL}-svc.dr.svc.cluster.local:61616
     - AMQPConnections.target.retryInterval=5000
     - AMQPConnections.target.user=admin
     - AMQPConnections.target.password=admin
@@ -192,6 +192,14 @@ Then, change the replicas on the DR env (mirrored env), then on the production e
 ----
 kubectl -n dr scale ActiveMQArtemis broker-dr --replicas 2
 kubectl -n production scale ActiveMQArtemis broker-prod --replicas 2
+----
+
+Then scale it down again:
+
+[source, yaml,indent=0]
+----
+kubectl -n dr scale ActiveMQArtemis broker-dr --replicas 1
+kubectl -n production scale ActiveMQArtemis broker-prod --replicas 1
 ----
 
 === 4. Exploring Address Filtering
