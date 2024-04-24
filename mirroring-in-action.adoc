@@ -245,6 +245,13 @@ On the target (`DR` env), you need to secure the acceptor `amqps` in order to be
 
 You need to upload/Mount the certificates on the production env and change the uri to incluse truststore/keystore cert and turststore/keystore password:
 
+[source, yaml,indent=0]
+----
+ extraMounts:
+      secrets:
+        - mytlssecret
+----
+
 For `one way-tls`:
  
 [source, yaml,indent=0]
