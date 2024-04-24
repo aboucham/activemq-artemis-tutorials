@@ -211,8 +211,8 @@ For instance: `addressFilter=fr.,!eu.` allow to include/mirror only adresses/que
 
 [source, yaml,indent=0]
 ----
-    - >-
-      AMQPConnections.target.uri=tcp://target-broker-all-${STATEFUL_SET_ORDINAL}-svc.dr.svc.cluster.local:61616
+     - >-
+      AMQPConnections.target.uri=tcp://broker-dr-broker-all-${STATEFUL_SET_ORDINAL}-svc.dr.svc.cluster.local:61616
     - AMQPConnections.target.retryInterval=5000
     - AMQPConnections.target.user=admin
     - AMQPConnections.target.password=admin
