@@ -26,7 +26,7 @@ spec:
     - criticalAnalyzerCheckPeriod=-1 
     - criticalAnalyzerPolicy=LOG
     - >-
-      AMQPConnections.target.uri=tcp://target-broker-all-0-svc.dr.svc.cluster.local:61616
+      AMQPConnections.target.uri=tcp://broker-dr-all-0-svc.dr.svc.cluster.local:61616
     - AMQPConnections.target.retryInterval=5000
     - AMQPConnections.target.user=admin
     - AMQPConnections.target.password=admin
