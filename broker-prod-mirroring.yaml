@@ -26,15 +26,15 @@ spec:
     - criticalAnalyzerCheckPeriod=-1 
     - criticalAnalyzerPolicy=LOG
     - >-
-      AMQPConnections.target.uri=tcp://broker-dr-all-0-svc.dr.svc.cluster.local:61616
-    - AMQPConnections.target.retryInterval=5000
-    - AMQPConnections.target.user=admin
-    - AMQPConnections.target.password=admin
-    - AMQPConnections.target.connectionElements.mirror.type=MIRROR
+      AMQPConnections.dr.uri=tcp://broker-dr-all-0-svc.dr.svc.cluster.local:61616
+    - AMQPConnections.dr.retryInterval=5000
+    - AMQPConnections.dr.user=admin
+    - AMQPConnections.dr.password=admin
+    - AMQPConnections.dr.connectionElements.mirror.type=MIRROR
     - >-
-      AMQPConnections.target.connectionElements.mirror.messageAcknowledgements=true
-    - AMQPConnections.target.connectionElements.mirror.queueCreation=true
-    - AMQPConnections.target.connectionElements.mirror.queueRemoval=true
+      AMQPConnections.dr.connectionElements.mirror.messageAcknowledgements=true
+    - AMQPConnections.dr.connectionElements.mirror.queueCreation=true
+    - AMQPConnections.dr.connectionElements.mirror.queueRemoval=true
   console:
     expose: true
   deploymentPlan:
