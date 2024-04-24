@@ -311,26 +311,34 @@ broker-prod-ss-0 broker-prod-container *****************************************
 broker-prod-ss-0 broker-prod-container Connected on Server AMQP Connection dr on broker-dr-amqp-0-svc-rte-dr.apps.abouchama-amq5.emea.aws.cee.support:443 after 0 retries
 broker-prod-ss-0 broker-prod-container *******************************************************************************************************************************
 ----
+
 === 6. Mirror: One to Many
 
 On the production env: `broker-prod` , we will connect to `DR` env `broker-dr` and `BACKUP_DR` env ``broker-backup-dr``:
 
+Deploy `broker-backup-dr`:
+
+[source, yaml,indent=0]
+----
+oc apply -f https://raw.githubusercontent.com/aboucham/activemq-artemis-tutorials/main/broker-backup-dr-mirroring.yaml
+----
+
+Add the mirroring section to `broker-prod` CR:
+
 [source, yaml,indent=0]
 ----
     - >-
-      AMQPConnections.dr.uri=tcp://broker-dr-amqp-${STATEFUL_SET_ORDINAL}-svc-rte-amqbroker-dr.apps:443?sslEnabled=true;trustStorePath=/amq/extra/secrets/ex-aao-amqp-secret/client.ts;trustStorePassword=password;verifyHost=false
+      AMQPConnections.dr.uri=tcp://broker-dr-amqp-${STATEFUL_SET_ORDINAL}-svc-rte-dr.apps.abouchama-amq5.emea.aws.cee.support:443?sslEnabled=true;trustStorePath=/amq/extra/secrets/mytlssecret/client.ts;trustStorePassword=password;verifyHost=false
     - AMQPConnections.dr.retryInterval=5000
     - AMQPConnections.dr.user=admin
     - AMQPConnections.dr.password=admin
     - AMQPConnections.dr.connectionElements.mirror.type=MIRROR
-    - >-
-      AMQPConnections.dr.connectionElements.mirror.messageAcknowledgements=true
+    - AMQPConnections.dr.connectionElements.mirror.messageAcknowledgements=true
     - AMQPConnections.dr.connectionElements.mirror.queueCreation=true
     - AMQPConnections.dr.connectionElements.mirror.queueRemoval=true
     - 'AMQPConnections.dr.connectionElements.mirror.addressFilter=fr.,!eu.'
-
     - >-
-      AMQPConnections.backup-dr.uri=tcp://broker-backup-dr-amqp-${STATEFUL_SET_ORDINAL}-svc-rte-amqbroker-dr.apps:443?sslEnabled=true;trustStorePath=/amq/extra/secrets/ex-aao-amqp-secret/client.ts;trustStorePassword=password;verifyHost=false
+      AMQPConnections.backup-dr.uri=tcp://broker-backup-dr-amqp-${STATEFUL_SET_ORDINAL}-svc-rte-dr.apps.abouchama-amq5.emea.aws.cee.support:443?sslEnabled=true;trustStorePath=/amq/extra/secrets/mytlssecret/client.ts;trustStorePassword=password;verifyHost=false
     - AMQPConnections.backup-dr.retryInterval=5000
     - AMQPConnections.backup-dr.user=admin
     - AMQPConnections.backup-dr.password=admin
@@ -352,7 +360,7 @@ Three messages should in the queue will correspond to the following events:
 [source, yaml,indent=0]
 ----
 export POD=broker-prod-ss-0
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address create --name fr.nantes --address fr.nantes --user admin --password admin --acceptor all
+oc exec -n production -i $POD -- /home/jboss/amq-broker/bin/artemis address create --acceptor all --anycast --no-multicast --name fr.nantes --user admin --password admin 
 ----
 
 2.Event: Creating Queue:
@@ -360,7 +368,7 @@ oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address create --name fr.n
 [source, yaml,indent=0]
 ----
 export POD=broker-prod-ss-0
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis queue create --name fr.nantes --address fr.nantes --user admin --password admin --acceptor all
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis queue create --name fr.nantes --address fr.nantes --anycast --durable --user admin --password admin --acceptor all --silent
 ----
 
 3.Event Producing Messages:
@@ -373,23 +381,7 @@ oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --
 
 Once the acceptor starts , the connection will be established and the DR broker will treat these messages accordingly as mirror events and perform the appropriate operations at the DR broker.
 
-The above broker properties would create two address testQueue and testTopic.
-With command
-
-[source, yaml,indent=0]
-----
-export POD=broker-prod-ss-0
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis queue stat --acceptor all --user admin --password admin
-----
-excuted on the pod it is possible to display the created ANYCAST queue and confirm that it has been created. To confirm that a MULTICAST address has been created use command
-
-[source, yaml,indent=0]
-----
-export POD=broker-prod-ss-0
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
-----
-
-Enable specific logging to troubleshoot:
+Enable specific `logging` for troubleshooting on the broker with mirroring configuration:
 
 Create configmap with custom logging:
 
