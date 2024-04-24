@@ -138,7 +138,7 @@ oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --
 [source, yaml,indent=0]
 ----
     - >-
-      AMQPConnections.target.uri=tcp://target-broker-all-0-svc.dr.svc.cluster.local:61616
+      AMQPConnections.target.uri=tcp://broker-dr-broker-all-0-svc.dr.svc.cluster.local:61616
     - AMQPConnections.target.retryInterval=5000
     - AMQPConnections.target.user=admin
     - AMQPConnections.target.password=admin
@@ -154,7 +154,14 @@ oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --
 oc apply -f https://raw.githubusercontent.com/aboucham/activemq-artemis-tutorials/main/broker-prod-mirroring.yaml
 ----
 
-Check the address/queue `A` created without 3 messages.
+Check the address/queue `A` created without 3 messages:
+
+[source, yaml,indent=0]
+----
+export POD=broker-dr-ss-0
+oc exec -n dr -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
+oc exec -n dr -i $POD -- /home/jboss/amq-broker/bin/artemis queue stat --acceptor all --user admin --password admin
+----
 
 --> Pre Existing Messages
 The broker will only mirror messages arriving from the point in time the mirror was configured. 
