@@ -126,7 +126,7 @@ We will create `queue A` and send `3 messages` before establishing `Mirroring Co
 
 [source, yaml,indent=0]
 ----
-export POD=broker-prod-0
+export POD=broker-prod-ss-0
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://A --user admin --password admin --message-count 1 --message 1 
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://A --user admin --password admin --message-count 1 --message 2
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://A --user admin --password admin --message-count 1 --message 3
@@ -184,7 +184,7 @@ Then, change the replicas on the DR env (mirrored env), then on the production e
 [source, yaml,indent=0]
 ----
 kubectl -n dr scale ActiveMQArtemis broker-dr --replicas 2
-kubectl -n production scale ActiveMQArtemis broker-dr --replicas 2
+kubectl -n production scale ActiveMQArtemis broker-prod --replicas 2
 ----
 
 === 4. Exploring Address Filtering
@@ -215,7 +215,7 @@ Create address `fr.paris` and `eu.uk`:
 
 [source, yaml,indent=0]
 ----
-export POD=broker-prod-0
+export POD=broker-prod-ss-0
 oc exec -n production -i $POD -- /home/jboss/amq-broker/bin/artemis address create --name fr.paris --address fr.paris --user admin --password admin --acceptor all
 oc exec -n production -i $POD -- /home/jboss/amq-broker/bin/artemis address create --name eu.uk --address eu.uk --user admin --password admin --acceptor all
 ----
@@ -224,7 +224,7 @@ Check on the DR env:
 
 [source, yaml,indent=0]
 ----
-export POD=broker-prod-0
+export POD=broker-prod-ss-0
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
 ----
 
@@ -327,7 +327,7 @@ Three messages should in the queue will correspond to the following events:
 
 [source, yaml,indent=0]
 ----
-export POD=broker-prod-0
+export POD=broker-prod-ss-0
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address create --name fr.nantes --address fr.nantes --user admin --password admin --acceptor all
 ----
 
@@ -335,7 +335,7 @@ oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address create --name fr.n
 
 [source, yaml,indent=0]
 ----
-export POD=broker-prod-0
+export POD=broker-prod-ss-0
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis queue create --name fr.nantes --address fr.nantes --user admin --password admin --acceptor all
 ----
 
@@ -343,7 +343,7 @@ oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis queue create --name fr.nan
 
 [source, yaml,indent=0]
 ----
-export POD=broker-prod-0
+export POD=broker-prod-ss-0
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://fr.nantes --user admin --password admin --message-count 1 --message 1 
 ----
 
@@ -354,14 +354,14 @@ With command
 
 [source, yaml,indent=0]
 ----
-export POD=broker-prod-0
+export POD=broker-prod-ss-0
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis queue stat --acceptor all --user admin --password admin
 ----
 excuted on the pod it is possible to display the created ANYCAST queue and confirm that it has been created. To confirm that a MULTICAST address has been created use command
 
 [source, yaml,indent=0]
 ----
-export POD=broker-prod-0
+export POD=broker-prod-ss-0
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
 ----
 
