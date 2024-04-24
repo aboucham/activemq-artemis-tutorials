@@ -154,10 +154,61 @@ oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --
 oc apply -f https://raw.githubusercontent.com/aboucham/activemq-artemis-tutorials/main/broker-prod-mirroring.yaml
 ----
 
+Check the address/queue `A` created without 3 messages.
+
+--> Pre Existing Messages
+The broker will only mirror messages arriving from the point in time the mirror was configured. 
+Previously existing messages will not be forwarded to other brokers.
+
 
 === 4. Mirroring in a Scale-Up Scenario
 
+Update Mirroring uri configuration by using the env variable `${STATEFUL_SET_ORDINAL}` , this env var provide sequential identities for pod replicas, and when using OrderedReady Pod management, Pods are created from ordinal index 0 up to N-1.
+
+[source, yaml,indent=0]
+----
+    - >-
+      AMQPConnections.target.uri=tcp://target-broker-all-${STATEFUL_SET_ORDINAL}-svc.dr.svc.cluster.local:61616
+    - AMQPConnections.target.retryInterval=5000
+    - AMQPConnections.target.user=admin
+    - AMQPConnections.target.password=admin
+    - AMQPConnections.target.connectionElements.mirror.type=MIRROR
+    - >-
+      AMQPConnections.target.connectionElements.mirror.messageAcknowledgements=true
+    - AMQPConnections.target.connectionElements.mirror.queueCreation=true
+    - AMQPConnections.target.connectionElements.mirror.queueRemoval=true
+----
+
+Then, change the replicas on the DR env (mirrored env), then on the production env:
+
+[source, yaml,indent=0]
+----
+kubectl -n dr scale ActiveMQArtemis broker-dr --replicas 2
+kubectl -n production scale ActiveMQArtemis broker-dr --replicas 2
+----
+
 === 5. Exploring Address Filtering
+
+Update Mirroring uri configuration by using the addressFilter.
+AdressFilter is An optional comma-separated list of `inclusion and/or exclusion` filter entries used to govern which addresses (and related queues) mirroring events will be created for on this broker-connection.
+
+For instance: `addressFilter=fr.,!eu.` allow to include/mirror only adresses/queues that starts with `fr.` and excluse all the adresses/queues that starts with `eu.`
+
+[source, yaml,indent=0]
+----
+    - >-
+      AMQPConnections.target.uri=tcp://target-broker-all-${STATEFUL_SET_ORDINAL}-svc.dr.svc.cluster.local:61616
+    - AMQPConnections.target.retryInterval=5000
+    - AMQPConnections.target.user=admin
+    - AMQPConnections.target.password=admin
+    - AMQPConnections.target.connectionElements.mirror.type=MIRROR
+    - >-
+      AMQPConnections.target.connectionElements.mirror.messageAcknowledgements=true
+    - AMQPConnections.target.connectionElements.mirror.queueCreation=true
+    - AMQPConnections.target.connectionElements.mirror.queueRemoval=true
+    - 'AMQPConnections.target.connectionElements.mirror.addressFilter=fr.,!eu.'
+----
+
 
 === 6. Troubleshooting Mirroring
 
