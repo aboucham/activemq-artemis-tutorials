@@ -132,6 +132,29 @@ oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://A --user admin --password admin --message-count 1 --message 3
 ----
 
+
+ Setup `Mirroring` using `brokerProperties` on the `broker-prod` broker:
+
+[source, yaml,indent=0]
+----
+    - >-
+      AMQPConnections.target.uri=tcp://target-broker-all-0-svc.dr.svc.cluster.local:61616
+    - AMQPConnections.target.retryInterval=5000
+    - AMQPConnections.target.user=admin
+    - AMQPConnections.target.password=admin
+    - AMQPConnections.target.connectionElements.mirror.type=MIRROR
+    - >-
+      AMQPConnections.target.connectionElements.mirror.messageAcknowledgements=true
+    - AMQPConnections.target.connectionElements.mirror.queueCreation=true
+    - AMQPConnections.target.connectionElements.mirror.queueRemoval=true
+----
+
+[source, yaml,indent=0]
+----
+oc apply -f https://raw.githubusercontent.com/aboucham/activemq-artemis-tutorials/main/broker-prod-mirroring.yaml
+----
+
+
 === 4. Mirroring in a Scale-Up Scenario
 
 === 5. Exploring Address Filtering
