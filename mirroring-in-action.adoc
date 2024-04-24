@@ -200,3 +200,39 @@ excuted on the pod it is possible to display the created ANYCAST queue and confi
 export POD=broker-prod-0
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
 ----
+
+Enable specific logging to troubleshoot:
+
+Create configmap with custom logging:
+
+[source, yaml,indent=0]
+----
+oc create -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: custom-logging-config
+data:
+  logging.properties: |2
+    appender.stdout.name = STDOUT
+    appender.stdout.type = Console
+    rootLogger = info, STDOUT
+    logger.activemq.name=org.apache.activemq.artemis.core.config.impl.ConfigurationImpl
+    logger.activemq.level=TRACE
+    logger.jaas.name=org.apache.activemq.artemis.spi.core.security.jaas
+    logger.jaas.level=TRACE
+    logger.rest.name=org.apache.activemq.artemis.core
+    logger.rest.level=ERROR
+EOF
+----
+
+Mount the configmap to the activemqArtemis level:
+
+[source, yaml,indent=0]
+----
+    extraMounts:
+      configMaps:
+        - custom-logging-config
+----
+
+
