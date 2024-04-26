@@ -352,7 +352,10 @@ Add the mirroring section to `broker-prod` CR:
 
 === 7. Troubleshooting Mirroring
 
+==== 7.1 Mirror Events:
+
 Stop the acceptor on the `DR` to simulate a Network Connection issue between Production and DR. Then check the queue `$ACTIVEMQ_ARTEMIS_MIRROR_DR`:
+
 Three messages should in the queue will correspond to the following events:
 
 1.Event: Creating Address:
@@ -380,6 +383,8 @@ oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --
 ----
 
 Once the acceptor starts , the connection will be established and the DR broker will treat these messages accordingly as mirror events and perform the appropriate operations at the DR broker.
+
+==== 7.2 Custom Logging for troubleshooting:
 
 Enable specific `logging` for troubleshooting on the broker with mirroring configuration:
 
