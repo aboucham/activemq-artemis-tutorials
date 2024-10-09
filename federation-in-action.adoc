@@ -120,18 +120,53 @@ EOF
 
 === 2. Configuring Federation
 
-`oc project production`
+ Setup `Federation` using `brokerProperties` on the `broker-prod-east` broker:
 
-We will create `queue A` and send `3 messages` before establishing `Mirroring Connections`:
+`oc project production-east`
 
 [source, yaml,indent=0]
 ----
-export POD=broker-prod-ss-0
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://A --user admin --password admin --message-count 1 --message 1 
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://A --user admin --password admin --message-count 1 --message 2
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://A --user admin --password admin --message-count 1 --message 3
+    - securityRoles.JOBS.producers.send=true
+    - securityRoles.JOBS.consumers.consume=true
+    - securityRoles.JOBS.consumers.createNonDurableQueue=true
+    - securityRoles.JOBS.consumers.deleteNonDurableQueue=true
+    - securityRoles.JOBS.admin.createDurableQueue=true
+    - securityRoles.JOBS.admin.consume=true
+    - securityRoles.JOBS.admin.send=true
+    - securityRoles.$ACTIVEMQ_ARTEMIS_FEDERATION.#.admin.createNonDurableQueue=true
+    - securityRoles.$ACTIVEMQ_ARTEMIS_FEDERATION.#.admin.createAddress=true
+    - securityRoles.$ACTIVEMQ_ARTEMIS_FEDERATION.#.admin.consume=true
+    - securityRoles.$ACTIVEMQ_ARTEMIS_FEDERATION.#.admin.send=true
+    - addressConfigurations.JOBS.routingTypes=ANYCAST
+    - addressConfigurations.JOBS.queueConfigs.JOBS.routingType=ANYCAST
+    - 'broker-0.AMQPConnections.west.uri=tcp://broker-prod-west-all-0-svc.production-west.svc.cluster.local:61616'
+    - AMQPConnections.west.retryInterval=5000
+    - AMQPConnections.west.user=admin
+    - AMQPConnections.west.password=admin
+    - AMQPConnections.west.autostart=true
+    - AMQPConnections.west.federations.peerN.properties.amqpCredit=0
+    - AMQPConnections.west.federations.peerN.properties.amqpPullConsumerCredits=100
+    - AMQPConnections.west.federations.peerN.localQueuePolicies.forJobs.includes.justJobs.queueMatch=JOBS
 ----
 
+We will create `queue A` and send `3 messages` before establishing `Federation Connections`:
+
+[source, yaml,indent=0]
+----
+export POD=broker-prod-east-ss-0
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://JOBS --user admin --password admin --message-count 1 --message 1 
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://JOBS --user admin --password admin --message-count 1 --message 2
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://JOBS --user admin --password admin --message-count 1 --message 3
+----
+
+Check the address/queue `A` created without 3 messages:
+
+[source, yaml,indent=0]
+----
+export POD=broker-prod-west-ss-0
+oc exec -n production-west -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
+oc exec -n production-west -i $POD -- /home/jboss/amq-broker/bin/artemis queue stat --acceptor all --user admin --password admin
+----
 
  Setup `Mirroring` using `brokerProperties` on the `broker-prod` broker:
 
