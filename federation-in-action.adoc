@@ -165,6 +165,12 @@ In the list of addresses and queues, you should see the following:
 
 [source, yaml,indent=0]
 ----
+export POD=broker-prod-east-ss-0
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis queue stat --acceptor all --user admin --password admin
+----
+[source, yaml,indent=0]
+----
 export POD=broker-prod-west-ss-0
 oc exec -n production-west -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
 oc exec -n production-west -i $POD -- /home/jboss/amq-broker/bin/artemis queue stat --acceptor all --user admin --password admin
