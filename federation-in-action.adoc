@@ -176,8 +176,12 @@ oc exec -n production-west -i $POD -- /home/jboss/amq-broker/bin/artemis address
 oc exec -n production-west -i $POD -- /home/jboss/amq-broker/bin/artemis queue stat --acceptor all --user admin --password admin
 ----
 
-
-
+[source, yaml,indent=0]
+----
+export POD=broker-prod-east-ss-0
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://JOBS --user admin --password admin --message-count 1 --message 1
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://JOBS --user admin --password admin --message-count 1 --message 2
+----
 
 === 7. Deep Dive::
 
