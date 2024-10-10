@@ -163,9 +163,12 @@ In the list of addresses and queues, you should see the following:
 `federation-control-link:abc:UUID`
 `federation-events-sender:abc:UUID`
 
-
-
-
+[source, yaml,indent=0]
+----
+export POD=broker-prod-west-ss-0
+oc exec -n production-west -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
+oc exec -n production-west -i $POD -- /home/jboss/amq-broker/bin/artemis queue stat --acceptor all --user admin --password admin
+----
 
 
 
