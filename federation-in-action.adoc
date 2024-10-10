@@ -131,7 +131,7 @@ EOF
     - AMQPConnections.target.reconnectAttempts=-2
     - AMQPConnections.target.user=admin
     - AMQPConnections.target.password=admin
-    - AMQPConnections.target.autostart=false
+    - AMQPConnections.target.autostart=start
     - AMQPConnections.target.federations.abc.type=FEDERATION
     - AMQPConnections.target.federations.abc.localAddressPolicies.policy1.includes.m1.addressMatch=east.#
     - AMQPConnections.target.federations.abc.localAddressPolicies.policy1.excludes.m2.addressMatch=west.#
@@ -147,30 +147,27 @@ EOF
     - AMQPConnections.target.federations.abc.remoteQueuePolicies.policy4.excludes.m5.queueMatch=east.#
 ----
 
+In the logs of `broker-prod-east-ss-0` you should see the following lines:
+
 [source, yaml,indent=0]
 ----
-    - securityRoles.JOBS.producers.send=true
-    - securityRoles.JOBS.consumers.consume=true
-    - securityRoles.JOBS.consumers.createNonDurableQueue=true
-    - securityRoles.JOBS.consumers.deleteNonDurableQueue=true
-    - securityRoles.JOBS.admin.createDurableQueue=true
-    - securityRoles.JOBS.admin.consume=true
-    - securityRoles.JOBS.admin.send=true
-    - securityRoles.$ACTIVEMQ_ARTEMIS_FEDERATION.#.admin.createNonDurableQueue=true
-    - securityRoles.$ACTIVEMQ_ARTEMIS_FEDERATION.#.admin.createAddress=true
-    - securityRoles.$ACTIVEMQ_ARTEMIS_FEDERATION.#.admin.consume=true
-    - securityRoles.$ACTIVEMQ_ARTEMIS_FEDERATION.#.admin.send=true
-    - addressConfigurations.JOBS.routingTypes=ANYCAST
-    - addressConfigurations.JOBS.queueConfigs.JOBS.routingType=ANYCAST
-    - 'broker-0.AMQPConnections.west.uri=tcp://broker-prod-west-all-0-svc.production-west.svc.cluster.local:61616'
-    - AMQPConnections.west.retryInterval=5000
-    - AMQPConnections.west.user=admin
-    - AMQPConnections.west.password=admin
-    - AMQPConnections.west.autostart=true
-    - AMQPConnections.west.federations.peerN.properties.amqpCredit=0
-    - AMQPConnections.west.federations.peerN.properties.amqpPullConsumerCredits=100
-    - AMQPConnections.west.federations.peerN.localQueuePolicies.forJobs.includes.justJobs.queueMatch=JOBS
+broker-prod-east-container AMQ601767: AMQP connection 4828734a for user unknown@broker-prod-west-all-0-svc.production-west.svc.cluster.local/172.30.181.112:61616 created
+broker-prod-east-container AMQ111003:
+broker-prod-east-container *******************************************************************************************************************************
+broker-prod-east-container Connected on Server AMQP Connection target on broker-prod-west-all-0-svc.production-west.svc.cluster.local:61616 after 0 retries
+*******************************************************************************************************************************
 ----
+
+In the list of addresses and queues, you should see the following:
+
+`federation-control-link:abc:UUID`
+`federation-events-sender:abc:UUID`
+
+
+
+
+
+
 
 
 === 7. Deep Dive::
