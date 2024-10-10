@@ -126,6 +126,27 @@ EOF
 
 [source, yaml,indent=0]
 ----
+AMQPConnections.target.uri=tcp://broker-prod-west-all-0-svc.production-west.svc.cluster.local:61616
+AMQPConnections.target.retryInterval=55
+AMQPConnections.target.reconnectAttempts=-2
+AMQPConnections.target.user=admin
+AMQPConnections.target.password=admin
+AMQPConnections.target.autostart=false
+AMQPConnections.target.federations.abc.type=FEDERATION
+AMQPConnections.target.federations.abc.localAddressPolicies.policy1.includes.m1.addressMatch=a
+AMQPConnections.target.federations.abc.localAddressPolicies.policy1.includes.m2.addressMatch=b
+AMQPConnections.target.federations.abc.localAddressPolicies.policy1.includes.m3.addressMatch=c
+AMQPConnections.target.federations.abc.localAddressPolicies.policy1.maxHops=2
+AMQPConnections.target.federations.abc.localAddressPolicies.policy1.autoDelete=true
+AMQPConnections.target.federations.abc.localAddressPolicies.policy1.autoDeleteMessageCount=42
+AMQPConnections.target.federations.abc.localAddressPolicies.policy1.autoDeleteDelay=10000
+AMQPConnections.target.federations.abc.localAddressPolicies.policy2.includes.m4.queueMatch=y
+AMQPConnections.target.federations.abc.localAddressPolicies.policy2.excludes.m5.queueMatch=z
+AMQPConnections.target.federations.abc.localAddressPolicies.policy2.enableDivertBindings=true
+----
+
+[source, yaml,indent=0]
+----
     - securityRoles.JOBS.producers.send=true
     - securityRoles.JOBS.consumers.consume=true
     - securityRoles.JOBS.consumers.createNonDurableQueue=true
@@ -512,3 +533,34 @@ Core Federeation:
 
 **NOTE:** the amqp federation is the way to go, it it intentionally similar to the core federation but better and in active dev. we really should be deprecating core federation.
 the issue of no logging etc when it does not work and debugging.... those are the sort of things that are better in the amqp federation. and any short coming in amqp federation will be a priority.
+
+
+Source: https://github.com/apache/activemq-artemis/blob/9583f844c17ff3463327f5e0ae209ef10c[…]he/activemq/artemis/core/config/impl/ConfigurationImplTest.java
+
+   private void doTestAMQPFederationAddressPolicyConfiguration(boolean local) throws Throwable {
+      final ConfigurationImpl configuration = new ConfigurationImpl();
+
+      final String policyType = local ? "localAddressPolicies" : "remoteAddressPolicies";
+
+      final Properties insertionOrderedProperties = new ConfigurationImpl.InsertionOrderedProperties();
+      insertionOrderedProperties.put("AMQPConnections.target.uri", "localhost:61617");
+      insertionOrderedProperties.put("AMQPConnections.target.retryInterval", 55);
+      insertionOrderedProperties.put("AMQPConnections.target.reconnectAttempts", -2);
+      insertionOrderedProperties.put("AMQPConnections.target.user", "admin");
+      insertionOrderedProperties.put("AMQPConnections.target.password", "password");
+      insertionOrderedProperties.put("AMQPConnections.target.autostart", "false");
+      // This line is unnecessary but serves as a match to what the mirror connectionElements style
+      // configuration does as a way of explicitly documenting what you are configuring here.
+      insertionOrderedProperties.put("AMQPConnections.target.federations.abc.type", "FEDERATION");
+      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy1.includes.m1.addressMatch", "a");
+      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy1.includes.m2.addressMatch", "b");
+      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy1.includes.m3.addressMatch", "c");
+      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy1.maxHops", "2");
+      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy1.autoDelete", "true");
+      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy1.autoDeleteMessageCount", "42");
+      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy1.autoDeleteDelay", "10000");
+      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy2.includes.m4.addressMatch", "y");
+      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy2.excludes.m5.addressMatch", "z");
+      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy2.enableDivertBindings", "true");
+      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy2.properties.a", "b");
+
