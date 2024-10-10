@@ -126,23 +126,25 @@ EOF
 
 [source, yaml,indent=0]
 ----
-    - AMQPConnections.target.uri=tcp://broker-prod-west-all-0-svc.production-west.svc.cluster.local:61616
+    - 'AMQPConnections.target.uri=tcp://broker-prod-west-all-0-svc.production-west.svc.cluster.local:61616'
     - AMQPConnections.target.retryInterval=55
     - AMQPConnections.target.reconnectAttempts=-2
     - AMQPConnections.target.user=admin
     - AMQPConnections.target.password=admin
     - AMQPConnections.target.autostart=false
     - AMQPConnections.target.federations.abc.type=FEDERATION
-    - AMQPConnections.target.federations.abc.localAddressPolicies.policy1.includes.m1.addressMatch=a
-    - AMQPConnections.target.federations.abc.localAddressPolicies.policy1.includes.m2.addressMatch=b
-    - AMQPConnections.target.federations.abc.localAddressPolicies.policy1.includes.m3.addressMatch=c
+    - AMQPConnections.target.federations.abc.localAddressPolicies.policy1.includes.m1.addressMatch=east.#
+    - AMQPConnections.target.federations.abc.localAddressPolicies.policy1.excludes.m2.addressMatch=west.#
     - AMQPConnections.target.federations.abc.localAddressPolicies.policy1.maxHops=2
     - AMQPConnections.target.federations.abc.localAddressPolicies.policy1.autoDelete=true
     - AMQPConnections.target.federations.abc.localAddressPolicies.policy1.autoDeleteMessageCount=42
     - AMQPConnections.target.federations.abc.localAddressPolicies.policy1.autoDeleteDelay=10000
-    - AMQPConnections.target.federations.abc.localAddressPolicies.policy2.includes.m4.queueMatch=y
-    - AMQPConnections.target.federations.abc.localAddressPolicies.policy2.excludes.m5.queueMatch=z
-    - AMQPConnections.target.federations.abc.localAddressPolicies.policy2.enableDivertBindings=true
+    - AMQPConnections.target.federations.abc.localQueuePolicies.policy2.includes.m4.queueMatch=#
+    - AMQPConnections.target.federations.abc.localQueuePolicies.policy2.excludes.m5.queueMatch=west.#
+    - AMQPConnections.target.federations.abc.remoteAddressPolicies.policy3.includes.m1.addressMatch=west.#
+    - AMQPConnections.target.federations.abc.remoteAddressPolicies.policy3.excludes.m2.addressMatch=east.#
+    - AMQPConnections.target.federations.abc.remoteQueuePolicies.policy4.includes.m4.queueMatch=#
+    - AMQPConnections.target.federations.abc.remoteQueuePolicies.policy4.excludes.m5.queueMatch=east.#
 ----
 
 [source, yaml,indent=0]
