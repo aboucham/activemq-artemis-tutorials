@@ -508,3 +508,7 @@ Core Federeation:
   - federationConfigurations.ns1-to-ns2.queuePolicies.app-qp.includeFederated=false
   - federationConfigurations.ns1-to-ns2.queuePolicies.app-qp.includes.all-app.queueMatch=app.#
 ----
+
+
+**NOTE:** the amqp federation is the way to go, it it intentionally similar to the core federation but better and in active dev. we really should be deprecating core federation.
+the issue of no logging etc when it does not work and debugging.... those are the sort of things that are better in the amqp federation. and any short coming in amqp federation will be a priority.
