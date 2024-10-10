@@ -170,319 +170,12 @@ EOF
     - AMQPConnections.west.federations.peerN.localQueuePolicies.forJobs.includes.justJobs.queueMatch=JOBS
 ----
 
-We will create `queue A` and send `3 messages` before establishing `Federation Connections`:
 
-[source, yaml,indent=0]
-----
-export POD=broker-prod-east-ss-0
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://JOBS --user admin --password admin --message-count 1 --message 1 
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://JOBS --user admin --password admin --message-count 1 --message 2
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://JOBS --user admin --password admin --message-count 1 --message 3
-----
-
-Check the address/queue `A` created without 3 messages:
-
-[source, yaml,indent=0]
-----
-export POD=broker-prod-west-ss-0
-oc exec -n production-west -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
-oc exec -n production-west -i $POD -- /home/jboss/amq-broker/bin/artemis queue stat --acceptor all --user admin --password admin
-----
-
- Setup `Mirroring` using `brokerProperties` on the `broker-prod` broker:
-
-[source, yaml,indent=0]
-----
-    - >-
-      AMQPConnections.dr.uri=tcp://broker-dr-broker-all-0-svc.dr.svc.cluster.local:61616
-    - AMQPConnections.dr.retryInterval=5000
-    - AMQPConnections.dr.user=admin
-    - AMQPConnections.dr.password=admin
-    - AMQPConnections.dr.connectionElements.mirror.type=MIRROR
-    - >-
-      AMQPConnections.dr.connectionElements.mirror.messageAcknowledgements=true
-    - AMQPConnections.dr.connectionElements.mirror.queueCreation=true
-    - AMQPConnections.dr.connectionElements.mirror.queueRemoval=true
-----
-
-[source, yaml,indent=0]
-----
-oc apply -f https://raw.githubusercontent.com/aboucham/activemq-artemis-tutorials/main/broker-prod-mirroring.yaml
-----
-
-Check the address/queue `A` created without 3 messages:
-
-[source, yaml,indent=0]
-----
-export POD=broker-dr-ss-0
-oc exec -n dr -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
-oc exec -n dr -i $POD -- /home/jboss/amq-broker/bin/artemis queue stat --acceptor all --user admin --password admin
-----
-
---> Pre Existing Messages
-The broker will only mirror messages arriving from the point in time the mirror was configured. 
-Previously existing messages will not be forwarded to other brokers.
-
-
-=== 3. Mirroring in a Scale-Up Scenario
-
-Update Mirroring uri configuration by using the env variable `${STATEFUL_SET_ORDINAL}` , this env var provide sequential identities for pod replicas, and when using OrderedReady Pod management, Pods are created from ordinal index 0 up to N-1.
-
-[source, yaml,indent=0]
-----
-    - >-
-      AMQPConnections.dr.uri=tcp://broker-dr-broker-all-${STATEFUL_SET_ORDINAL}-svc.dr.svc.cluster.local:61616
-    - AMQPConnections.dr.retryInterval=5000
-    - AMQPConnections.dr.user=admin
-    - AMQPConnections.dr.password=admin
-    - AMQPConnections.dr.connectionElements.mirror.type=MIRROR
-    - >-
-      AMQPConnections.dr.connectionElements.mirror.messageAcknowledgements=true
-    - AMQPConnections.dr.connectionElements.mirror.queueCreation=true
-    - AMQPConnections.dr.connectionElements.mirror.queueRemoval=true
-----
-
-Then, change the replicas on the DR env (mirrored env), then on the production env:
-
-[source, yaml,indent=0]
-----
-kubectl -n dr scale ActiveMQArtemis broker-dr --replicas 2
-kubectl -n production scale ActiveMQArtemis broker-prod --replicas 2
-----
-
-Then scale it down again:
-
-[source, yaml,indent=0]
-----
-kubectl -n dr scale ActiveMQArtemis broker-dr --replicas 1
-kubectl -n production scale ActiveMQArtemis broker-prod --replicas 1
-----
-
-=== 4. Exploring Address Filtering
-
-Update Mirroring uri configuration by using the addressFilter.
-AdressFilter is An optional comma-separated list of `inclusion and/or exclusion` filter entries used to govern which addresses (and related queues) mirroring events will be created for on this broker-connection.
-
-For instance: `addressFilter=fr.,!eu.` allow to include/mirror only adresses/queues that starts with `fr.` and excluse all the adresses/queues that starts with `eu.`
-
-[source, yaml,indent=0]
-----
-     - >-
-      AMQPConnections.dr.uri=tcp://broker-dr-broker-all-${STATEFUL_SET_ORDINAL}-svc.dr.svc.cluster.local:61616
-    - AMQPConnections.dr.retryInterval=5000
-    - AMQPConnections.dr.user=admin
-    - AMQPConnections.dr.password=admin
-    - AMQPConnections.dr.connectionElements.mirror.type=MIRROR
-    - >-
-      AMQPConnections.dr.connectionElements.mirror.messageAcknowledgements=true
-    - AMQPConnections.dr.connectionElements.mirror.queueCreation=true
-    - AMQPConnections.dr.connectionElements.mirror.queueRemoval=true
-    - 'AMQPConnections.dr.connectionElements.mirror.addressFilter=fr.,!eu.'
-----
-
-Test:
-
-Create address `fr.paris` and `eu.uk`:
-
-[source, yaml,indent=0]
-----
-export POD=broker-prod-ss-0
-oc exec -n production -i $POD -- /home/jboss/amq-broker/bin/artemis address create --acceptor all --anycast --no-multicast --name fr.paris --user admin --password admin 
-oc exec -n production -i $POD -- /home/jboss/amq-broker/bin/artemis address create --acceptor all --anycast --no-multicast --name eu.uk --user admin --password admin 
-----
-
-Check on the DR env:
-
-[source, yaml,indent=0]
-----
-export POD=broker-dr-ss-0
-oc exec -n dr -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
-----
-
-
-=== 5. Mirroring:OverSSL (route)
-
-On the target (`DR` env), you need to secure the acceptor `amqps` in order to be exposed outside openshift. 
-
-[source, yaml,indent=0]
-----
-    - expose: true
-      name: amqp
-      port: 5672
-      protocols: amqp
-      sslEnabled: true
-      sslSecret: mytlssecret
-----
-
-You need to upload/Mount the certificates on the production env and change the uri to incluse truststore/keystore cert and turststore/keystore password:
-
-[source, yaml,indent=0]
-----
-  deploymentPlan:
-    extraMounts:
-          secrets:
-            - mytlssecret
-----
-
-For `one way-tls`:
- 
-[source, yaml,indent=0]
-----
-    - >-
-      AMQPConnections.dr.uri=tcp://broker-dr-amqp-${STATEFUL_SET_ORDINAL}-svc-rte-dr.apps.abouchama-amq5.emea.aws.cee.support:443?sslEnabled=true;trustStorePath=/amq/extra/secrets/mytlssecret/client.ts;trustStorePassword=password;verifyHost=false
-    - AMQPConnections.dr.retryInterval=5000
-    - AMQPConnections.dr.user=admin
-    - AMQPConnections.dr.password=admin
-    - AMQPConnections.dr.connectionElements.mirror.type=MIRROR
-    - >-
-      AMQPConnections.dr.connectionElements.mirror.messageAcknowledgements=true
-    - AMQPConnections.dr.connectionElements.mirror.queueCreation=true
-    - AMQPConnections.dr.connectionElements.mirror.queueRemoval=true
-    - 'AMQPConnections.dr.connectionElements.mirror.addressFilter=fr.,!eu.'
-----
-
-For `two way-tls`:
-
-[source, yaml,indent=0]
-----
-    - >-
-      AMQPConnections.target.uri=tcp://broker-dr-amqp-${STATEFUL_SET_ORDINAL}-svc-rte-amqbroker-dr.apps:443?sslEnabled=true;trustStorePath=/amq/extra/secrets/ex-aao-amqp-secret/client.ts;trustStorePassword=password;keyStorePath=/amq/extra/secrets/ex-aao-amqp-secret/broker.ks;keyStorePassword=password;verifyHost=false
-    - AMQPConnections.target.retryInterval=5000
-    - AMQPConnections.target.user=admin
-    - AMQPConnections.target.password=admin
-    - AMQPConnections.target.connectionElements.mirror.type=MIRROR
-    - >-
-      AMQPConnections.target.connectionElements.mirror.messageAcknowledgements=true
-    - AMQPConnections.target.connectionElements.mirror.queueCreation=true
-    - AMQPConnections.target.connectionElements.mirror.queueRemoval=true
-    - 'AMQPConnections.target.connectionElements.mirror.addressFilter=fr.,!eu.'
-----
-
-In the log of broker-prod-ss-0 you should see the following lines:
-
-[source, yaml,indent=0]
-----
-broker-prod-ss-0 broker-prod-container 2024-04-24 16:34:32,151 INFO  [org.apache.activemq.artemis.protocol.amqp.logger] AMQ111003:
-broker-prod-ss-0 broker-prod-container *******************************************************************************************************************************
-broker-prod-ss-0 broker-prod-container Connected on Server AMQP Connection dr on broker-dr-amqp-0-svc-rte-dr.apps.abouchama-amq5.emea.aws.cee.support:443 after 0 retries
-broker-prod-ss-0 broker-prod-container *******************************************************************************************************************************
-----
-
-=== 6. Mirror: One to Many
-
-On the production env: `broker-prod` , we will connect to `DR` env `broker-dr` and `BACKUP_DR` env ``broker-backup-dr``:
-
-Deploy `broker-backup-dr`:
-
-[source, yaml,indent=0]
-----
-oc apply -f https://raw.githubusercontent.com/aboucham/activemq-artemis-tutorials/main/broker-backup-dr-mirroring.yaml
-----
-
-Add the mirroring section to `broker-prod` CR:
-
-[source, yaml,indent=0]
-----
-    - >-
-      AMQPConnections.dr.uri=tcp://broker-dr-amqp-${STATEFUL_SET_ORDINAL}-svc-rte-dr.apps.abouchama-amq5.emea.aws.cee.support:443?sslEnabled=true;trustStorePath=/amq/extra/secrets/mytlssecret/client.ts;trustStorePassword=password;verifyHost=false
-    - AMQPConnections.dr.retryInterval=5000
-    - AMQPConnections.dr.user=admin
-    - AMQPConnections.dr.password=admin
-    - AMQPConnections.dr.connectionElements.mirror.type=MIRROR
-    - AMQPConnections.dr.connectionElements.mirror.messageAcknowledgements=true
-    - AMQPConnections.dr.connectionElements.mirror.queueCreation=true
-    - AMQPConnections.dr.connectionElements.mirror.queueRemoval=true
-    - 'AMQPConnections.dr.connectionElements.mirror.addressFilter=fr.,!eu.'
-    - >-
-      AMQPConnections.backup-dr.uri=tcp://broker-backup-dr-amqp-${STATEFUL_SET_ORDINAL}-svc-rte-dr.apps.abouchama-amq5.emea.aws.cee.support:443?sslEnabled=true;trustStorePath=/amq/extra/secrets/mytlssecret/client.ts;trustStorePassword=password;verifyHost=false
-    - AMQPConnections.backup-dr.retryInterval=5000
-    - AMQPConnections.backup-dr.user=admin
-    - AMQPConnections.backup-dr.password=admin
-    - AMQPConnections.backup-dr.connectionElements.mirror.type=MIRROR
-    - >-
-      AMQPConnections.backup-dr.connectionElements.mirror.messageAcknowledgements=true
-    - AMQPConnections.backup-dr.connectionElements.mirror.queueCreation=true
-    - AMQPConnections.backup-dr.connectionElements.mirror.queueRemoval=true
-    - 'AMQPConnections.backup-dr.connectionElements.mirror.addressFilter=fr.,!eu.'
-----
-
-=== 7. Troubleshooting Mirroring
-
-==== 7.1 Mirror Events:
-
-Stop the acceptor on the `DR` to simulate a Network Connection issue between Production and DR. Then check the queue `$ACTIVEMQ_ARTEMIS_MIRROR_DR`:
-
-Three messages should in the queue will correspond to the following events:
-
-1.Event: Creating Address:
-
-[source, yaml,indent=0]
-----
-export POD=broker-prod-ss-0
-oc exec -n production -i $POD -- /home/jboss/amq-broker/bin/artemis address create --acceptor all --anycast --no-multicast --name fr.nantes --user admin --password admin 
-----
-
-2.Event: Creating Queue:
-
-[source, yaml,indent=0]
-----
-export POD=broker-prod-ss-0
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis queue create --name fr.nantes --address fr.nantes --anycast --durable --user admin --password admin --acceptor all --silent
-----
-
-3.Event Producing Messages:
-
-[source, yaml,indent=0]
-----
-export POD=broker-prod-ss-0
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://fr.nantes --user admin --password admin --message-count 1 --message 1 
-----
-
-Once the acceptor starts , the connection will be established and the DR broker will treat these messages accordingly as mirror events and perform the appropriate operations at the DR broker.
-
-==== 7.2 Custom Logging for troubleshooting:
-
-Enable specific `logging` for troubleshooting on the broker with mirroring configuration:
-
-Create configmap with custom logging:
-
-[source, yaml,indent=0]
-----
-oc create -f - <<EOF
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: custom-logging-config
-data:
-  logging.properties: |2
-    appender.stdout.name = STDOUT
-    appender.stdout.type = Console
-    rootLogger = info, STDOUT
-    logger.activemq.name=org.apache.activemq.artemis.core.config.impl.ConfigurationImpl
-    logger.activemq.level=TRACE
-    logger.jaas.name=org.apache.activemq.artemis.spi.core.security.jaas
-    logger.jaas.level=TRACE
-    logger.rest.name=org.apache.activemq.artemis.core
-    logger.rest.level=ERROR
-EOF
-----
-
-Mount the configmap to the activemqArtemis level:
-
-[source, yaml,indent=0]
-----
-    extraMounts:
-      configMaps:
-        - custom-logging-config
-----
-
-Deep Dive::
+=== 7. Deep Dive::
 
 https://github.com/apache/activemq-artemis-examples/tree/main/examples/features/broker-connection
 
 Core Federeation:
-
-
 
 [source, yaml,indent=0]
 ----
@@ -534,33 +227,40 @@ Core Federeation:
 **NOTE:** the amqp federation is the way to go, it it intentionally similar to the core federation but better and in active dev. we really should be deprecating core federation.
 the issue of no logging etc when it does not work and debugging.... those are the sort of things that are better in the amqp federation. and any short coming in amqp federation will be a priority.
 
-
 Source: https://github.com/apache/activemq-artemis/blob/9583f844c17ff3463327f5e0ae209ef10c[…]he/activemq/artemis/core/config/impl/ConfigurationImplTest.java
 
-   private void doTestAMQPFederationAddressPolicyConfiguration(boolean local) throws Throwable {
-      final ConfigurationImpl configuration = new ConfigurationImpl();
+==== 7.2 Custom Logging for troubleshooting:
 
-      final String policyType = local ? "localAddressPolicies" : "remoteAddressPolicies";
+Enable specific `logging` for troubleshooting on the broker with mirroring configuration:
 
-      final Properties insertionOrderedProperties = new ConfigurationImpl.InsertionOrderedProperties();
-      insertionOrderedProperties.put("AMQPConnections.target.uri", "localhost:61617");
-      insertionOrderedProperties.put("AMQPConnections.target.retryInterval", 55);
-      insertionOrderedProperties.put("AMQPConnections.target.reconnectAttempts", -2);
-      insertionOrderedProperties.put("AMQPConnections.target.user", "admin");
-      insertionOrderedProperties.put("AMQPConnections.target.password", "password");
-      insertionOrderedProperties.put("AMQPConnections.target.autostart", "false");
-      // This line is unnecessary but serves as a match to what the mirror connectionElements style
-      // configuration does as a way of explicitly documenting what you are configuring here.
-      insertionOrderedProperties.put("AMQPConnections.target.federations.abc.type", "FEDERATION");
-      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy1.includes.m1.addressMatch", "a");
-      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy1.includes.m2.addressMatch", "b");
-      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy1.includes.m3.addressMatch", "c");
-      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy1.maxHops", "2");
-      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy1.autoDelete", "true");
-      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy1.autoDeleteMessageCount", "42");
-      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy1.autoDeleteDelay", "10000");
-      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy2.includes.m4.addressMatch", "y");
-      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy2.excludes.m5.addressMatch", "z");
-      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy2.enableDivertBindings", "true");
-      insertionOrderedProperties.put("AMQPConnections.target.federations.abc." + policyType + ".policy2.properties.a", "b");
+Create configmap with custom logging:
 
+[source, yaml,indent=0]
+----
+oc create -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: custom-logging-config
+data:
+  logging.properties: |2
+    appender.stdout.name = STDOUT
+    appender.stdout.type = Console
+    rootLogger = info, STDOUT
+    logger.activemq.name=org.apache.activemq.artemis.core.config.impl.ConfigurationImpl
+    logger.activemq.level=TRACE
+    logger.jaas.name=org.apache.activemq.artemis.spi.core.security.jaas
+    logger.jaas.level=TRACE
+    logger.rest.name=org.apache.activemq.artemis.core
+    logger.rest.level=ERROR
+EOF
+----
+
+Mount the configmap to the activemqArtemis level:
+
+[source, yaml,indent=0]
+----
+    extraMounts:
+      configMaps:
+        - custom-logging-config
+----
