@@ -455,4 +455,56 @@ Mount the configmap to the activemqArtemis level:
         - custom-logging-config
 ----
 
+Deep Dive::
 
+https://github.com/apache/activemq-artemis-examples/tree/main/examples/features/broker-connection
+
+Core Federeation:
+
+
+
+[source, yaml,indent=0]
+----
+  brokerProperties:
+  - globalMaxSize=1GiB
+  - clusterConfigurations.my-cluster.messageLoadBalancingType=ON_DEMAND
+  - connectorConfigurations.ns1-federation-connector.params.host=artemis-broker-core-tls-0-svc-rte-ns1.apps.cluster-zz9jt.zz9jt.sandbox2715.opentlc.com
+  - connectorConfigurations.ns1-federation-connector.params.port=443
+  - connectorConfigurations.ns1-federation-connector.params.sslEnabled=true
+  - connectorConfigurations.ns1-federation-connector.params.trustStorePath=/etc/artemis-broker-tls-secret-volume/client.ts
+  - connectorConfigurations.ns1-federation-connector.params.trustStorePassword=password
+  - federationConfigurations.ns2-to-ns1.credentials.user=master
+  - federationConfigurations.ns2-to-ns1.credentials.password=master
+  - federationConfigurations.ns2-to-ns1.upstreamConfigurations.ns1.connectionConfiguration.staticConnectors=ns1-federation-connector
+  - federationConfigurations.ns2-to-ns1.upstreamConfigurations.ns1.connectionConfiguration.retryInterval=500
+  - federationConfigurations.ns2-to-ns1.upstreamConfigurations.ns1.connectionConfiguration.retryIntervalMultiplier=2
+  - federationConfigurations.ns2-to-ns1.upstreamConfigurations.ns1.connectionConfiguration.maxRetryInterval=30000
+  - federationConfigurations.ns2-to-ns1.upstreamConfigurations.ns1.connectionConfiguration.circuitBreakerTimeout=30000
+  - federationConfigurations.ns2-to-ns1.upstreamConfigurations.ns1.connectionConfiguration.shareConnection=true
+  - federationConfigurations.ns2-to-ns1.upstreamConfigurations.ns1.policyRefs=app-qp
+  - federationConfigurations.ns2-to-ns1.queuePolicies.app-qp.includeFederated=false
+  - federationConfigurations.ns2-to-ns1.queuePolicies.app-qp.includes.all-app.queueMatch=app.#
+----
+
+[source, yaml,indent=0]
+----
+  brokerProperties:
+  - globalMaxSize=1GiB
+  - clusterConfigurations.my-cluster.messageLoadBalancingType=ON_DEMAND
+  - connectorConfigurations.ns2-federation-connector.params.host=artemis-broker-core-tls-0-svc-rte-ns2.apps.cluster-vqs45.vqs45.sandbox3224.opentlc.com
+  - connectorConfigurations.ns2-federation-connector.params.port=443
+  - connectorConfigurations.ns2-federation-connector.params.sslEnabled=true
+  - connectorConfigurations.ns2-federation-connector.params.trustStorePath=/etc/artemis-broker-tls-secret-volume/client.ts
+  - connectorConfigurations.ns2-federation-connector.params.trustStorePassword=password
+  - federationConfigurations.ns1-to-ns2.credentials.user=master
+  - federationConfigurations.ns1-to-ns2.credentials.password=master
+  - federationConfigurations.ns1-to-ns2.upstreamConfigurations.ns2.connectionConfiguration.staticConnectors=ns2-federation-connector
+  - federationConfigurations.ns1-to-ns2.upstreamConfigurations.ns2.connectionConfiguration.retryInterval=500
+  - federationConfigurations.ns1-to-ns2.upstreamConfigurations.ns2.connectionConfiguration.retryIntervalMultiplier=2
+  - federationConfigurations.ns1-to-ns2.upstreamConfigurations.ns2.connectionConfiguration.maxRetryInterval=1000
+  - federationConfigurations.ns1-to-ns2.upstreamConfigurations.ns2.connectionConfiguration.circuitBreakerTimeout=1000
+  - federationConfigurations.ns1-to-ns2.upstreamConfigurations.ns2.connectionConfiguration.shareConnection=true
+  - federationConfigurations.ns1-to-ns2.upstreamConfigurations.ns2.policyRefs=app-qp
+  - federationConfigurations.ns1-to-ns2.queuePolicies.app-qp.includeFederated=false
+  - federationConfigurations.ns1-to-ns2.queuePolicies.app-qp.includes.all-app.queueMatch=app.#
+----
