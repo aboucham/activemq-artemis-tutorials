@@ -195,6 +195,9 @@ oc exec -n production-east -i $POD -- /home/jboss/amq-broker/bin/artemis consume
 
 This will create a federation connection between servers, the local server will federate messages sent to the address 'orders' from the remote and the remote will federate message sent to the tracking queue on the local broker to itself.
 
+-- orders from local (east) --> remote (west)
+-- tracking from remote (west) --> local (east)
+
 Setup `Federation` using `brokerProperties` on the `broker-prod-east` broker:
 
 `oc project production-east`
@@ -204,12 +207,16 @@ Setup `Federation` using `brokerProperties` on the `broker-prod-east` broker:
 ----
     - addressConfigurations.tracking.queueConfigs.tracking.routingType=ANYCAST
     - addressConfigurations.orders.routingTypes=MULTICAST"
+    - "addressConfigurations.orders.queueConfigs.orders.address=orders
+    - "addressConfigurations.orders.queueConfigs.orders.routingType=MULTICAST
     - 'AMQPConnections.target.uri=tcp://broker-prod-west-all-0-svc.production-west.svc.cluster.local:61616'
     - AMQPConnections.target.user=admin
     - AMQPConnections.target.password=admin
     - AMQPConnections.target.autostart=true
-    - AMQPConnections.target.federations.abc.type=FEDERATION
-    - AMQPConnections.target.federations.abc.localQueuePolicies.policy1.includes.m4.queueMatch=tracking
+    - AMQPConnections.target.federations.address-federation-to-remote.type=FEDERATION
+    - AMQPConnections.target.federations.address-federation-to-remote.localAddressPolicies.policy1.includes.m4.addressMatch=orders
+    - AMQPConnections.target.federations.address-federation-from-remote.type=FEDERATION
+    - AMQPConnections.target.federations.address-federation-from-remote.remoteQueuePolicies.policy1.includes.m4.queueMatch=tracking
 ----
 
 `oc project production-west`
