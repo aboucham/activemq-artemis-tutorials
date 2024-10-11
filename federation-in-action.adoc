@@ -191,7 +191,34 @@ oc exec -n production-east -i $POD -- /home/jboss/amq-broker/bin/artemis consume
 ----
 
 
-=== 3. Configuring Federation
+=== 3. Federation: amqp-federation local and remote
+
+This will create a federation connection between servers, the local server will federate messages sent to the address 'orders' from the remote and the remote will federate message sent to the tracking queue on the local broker to itself.
+
+Setup `Federation` using `brokerProperties` on the `broker-prod-east` broker:
+
+`oc project production-east`
+
+`broker-prod-east:`
+[source, yaml,indent=0]
+----
+    - addressConfigurations.tracking.queueConfigs.tracking.routingType=ANYCAST
+    - addressConfigurations.orders.routingTypes=MULTICAST"
+    - 'AMQPConnections.target.uri=tcp://broker-prod-west-all-0-svc.production-west.svc.cluster.local:61616'
+    - AMQPConnections.target.user=admin
+    - AMQPConnections.target.password=admin
+    - AMQPConnections.target.autostart=true
+    - AMQPConnections.target.federations.abc.type=FEDERATION
+    - AMQPConnections.target.federations.abc.localQueuePolicies.policy1.includes.m4.queueMatch=tracking
+----
+
+`oc project production-west`
+No configuration should be added on the `broker-prod-west` CR.
+
+
+
+
+=== 7. Configuring Federation
 
  Setup `Federation` using `brokerProperties` on the `broker-prod-east` broker:
 
