@@ -206,17 +206,16 @@ Setup `Federation` using `brokerProperties` on the `broker-prod-east` broker:
 [source, yaml,indent=0]
 ----
     - addressConfigurations.tracking.queueConfigs.tracking.routingType=ANYCAST
-    - addressConfigurations.orders.routingTypes=MULTICAST"
-    - "addressConfigurations.orders.queueConfigs.orders.address=orders
-    - "addressConfigurations.orders.queueConfigs.orders.routingType=MULTICAST
+    - addressConfigurations.orders.routingTypes=MULTICAST
+    - addressConfigurations.orders.queueConfigs.orders.address=orders
+    - addressConfigurations.orders.queueConfigs.orders.routingType=MULTICAST
     - 'AMQPConnections.target.uri=tcp://broker-prod-west-all-0-svc.production-west.svc.cluster.local:61616'
     - AMQPConnections.target.user=admin
     - AMQPConnections.target.password=admin
     - AMQPConnections.target.autostart=true
-    - AMQPConnections.target.federations.address-federation-to-remote.type=FEDERATION
-    - AMQPConnections.target.federations.address-federation-to-remote.localAddressPolicies.policy1.includes.m4.addressMatch=orders
-    - AMQPConnections.target.federations.address-federation-from-remote.type=FEDERATION
-    - AMQPConnections.target.federations.address-federation-from-remote.remoteQueuePolicies.policy1.includes.m4.queueMatch=tracking
+    - AMQPConnections.target.federations.abc.type=FEDERATION
+    - AMQPConnections.target.federations.abc.localAddressPolicies.policy1.includes.m4.addressMatch=orders
+    - AMQPConnections.target.federations.abc.remoteQueuePolicies.policy1.includes.m4.queueMatch=tracking
 ----
 
 `oc project production-west`
