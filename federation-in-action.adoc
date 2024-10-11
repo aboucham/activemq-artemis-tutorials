@@ -223,6 +223,21 @@ No configuration should be added on the `broker-prod-west` CR.
 
 
 
+=== 4. Federation over ssl
+
+  AMQPConnections.dr.uri=tcp://broker-dr-amqp-${STATEFUL_SET_ORDINAL}-svc-rte-dr.apps.abouchama-amq5.emea.aws.cee.support:443?sslEnabled=true;trustStorePath=/amq/extra/secrets/mytlssecret/client.ts;trustStorePassword=password;verifyHost=false
+
+`broker-prod-east:`
+[source, yaml,indent=0]
+----
+    - 'AMQPConnections.target.uri=tcp://broker-prod-west-amqp-0-svc-rte-production-west.apps.abouchama-fuse6.emea.aws.cee.support:443?sslEnabled=true;trustStorePath=/amq/extra/secrets/mytlssecret/client.ts;trustStorePassword=password;verifyHost=false'
+----
+
+`broker-prod-west:`
+[source, yaml,indent=0]
+----
+    - 'AMQPConnections.target.uri=tcp://broker-prod-east-amqp-0-svc-rte-production-east.apps.abouchama-fuse6.emea.aws.cee.support:443?sslEnabled=true;trustStorePath=/amq/extra/secrets/mytlssecret/client.ts;trustStorePassword=password;verifyHost=false'
+----
 
 === 7. Configuring Federation
 
