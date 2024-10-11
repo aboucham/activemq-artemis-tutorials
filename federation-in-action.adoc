@@ -118,7 +118,39 @@ spec:
 EOF
 ----
 
-=== 2. Configuring Federation
+=== 2. Federation: amqp-federation-queue-dual-federation
+
+Setup `Federation` using `brokerProperties` on the `broker-prod-east` broker:
+
+`oc project production-east`
+
+`broker-prod-east:`
+[source, yaml,indent=0]
+----
+    - 'AMQPConnections.target.uri=tcp://broker-prod-west-all-0-svc.production-west.svc.cluster.local:61616'
+    - AMQPConnections.target.user=admin
+    - AMQPConnections.target.password=admin
+    - AMQPConnections.target.autostart=true
+    - AMQPConnections.target.federations.abc.type=FEDERATION
+    - AMQPConnections.target.federations.abc.localQueuePolicies.policy2.includes.m4.queueMatch=east.#
+    - AMQPConnections.target.federations.abc.localQueuePolicies.policy2.excludes.m5.queueMatch=west.#
+----
+
+`oc project production-west`
+`broker-prod-west:`
+[source, yaml,indent=0]
+----
+    - 'AMQPConnections.target.uri=tcp://broker-prod-east-all-0-svc.production-east.svc.cluster.local:61616'
+    - AMQPConnections.target.user=admin
+    - AMQPConnections.target.password=admin
+    - AMQPConnections.target.autostart=true
+    - AMQPConnections.target.federations.abc.type=FEDERATION
+    - AMQPConnections.target.federations.abc.localQueuePolicies.policy2.includes.m4.queueMatch=east.#
+    - AMQPConnections.target.federations.abc.localQueuePolicies.policy2.excludes.m5.queueMatch=west.#
+----
+
+
+=== 3. Configuring Federation
 
  Setup `Federation` using `brokerProperties` on the `broker-prod-east` broker:
 
