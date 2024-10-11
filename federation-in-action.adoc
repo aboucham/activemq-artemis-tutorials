@@ -132,8 +132,8 @@ Setup `Federation` using `brokerProperties` on the `broker-prod-east` broker:
     - AMQPConnections.target.password=admin
     - AMQPConnections.target.autostart=true
     - AMQPConnections.target.federations.abc.type=FEDERATION
-    - AMQPConnections.target.federations.abc.localQueuePolicies.policy2.includes.m4.queueMatch=east.#
-    - AMQPConnections.target.federations.abc.localQueuePolicies.policy2.excludes.m5.queueMatch=west.#
+    - AMQPConnections.target.federations.abc.localQueuePolicies.policy1.includes.m4.queueMatch=tracking
+    - addressConfigurations.tracking.queueConfigs.tracking.routingType=ANYCAST
 ----
 
 `oc project production-west`
@@ -145,8 +145,8 @@ Setup `Federation` using `brokerProperties` on the `broker-prod-east` broker:
     - AMQPConnections.target.password=admin
     - AMQPConnections.target.autostart=true
     - AMQPConnections.target.federations.abc.type=FEDERATION
-    - AMQPConnections.target.federations.abc.localQueuePolicies.policy2.includes.m4.queueMatch=east.#
-    - AMQPConnections.target.federations.abc.localQueuePolicies.policy2.excludes.m5.queueMatch=west.#
+    - AMQPConnections.target.federations.abc.localQueuePolicies.policy1.includes.m4.queueMatch=tracking
+    - addressConfigurations.tracking.queueConfigs.tracking.routingType=ANYCAST
 ----
 
 
