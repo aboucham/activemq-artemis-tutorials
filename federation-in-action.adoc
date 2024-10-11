@@ -149,6 +149,30 @@ Setup `Federation` using `brokerProperties` on the `broker-prod-east` broker:
     - addressConfigurations.tracking.queueConfigs.tracking.routingType=ANYCAST
 ----
 
+In the logs of `broker-prod-east-ss-0` and `broker-prod-west-ss-0`  you should see the following lines:
+
+[source, yaml,indent=0]
+----
+broker-prod-east-container AMQ601767: AMQP connection 4828734a for user unknown@broker-prod-west-all-0-svc.production-west.svc.cluster.local/172.30.181.112:61616 created
+broker-prod-east-container AMQ111003:
+broker-prod-east-container *******************************************************************************************************************************
+broker-prod-east-container Connected on Server AMQP Connection target on broker-prod-west-all-0-svc.production-west.svc.cluster.local:61616 after 0 retries
+*******************************************************************************************************************************
+----
+
+Following with lines for creating the queue `federation-control-link:abc:UUID` and a consumer assigned.
+
+[source, yaml,indent=0]
+----
+export POD=broker-prod-east-ss-0
+oc exec -n production-east -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://tracking --user admin --password admin --message-count 1 --message 1
+----
+
+[source, yaml,indent=0]
+----
+export POD=broker-prod-west-ss-0
+oc exec -n production-west -i $POD -- /home/jboss/amq-broker/bin/artemis consumer --acceptor all --destination queue://tracking --user admin --password admin --message-count 1
+----
 
 === 3. Configuring Federation
 
