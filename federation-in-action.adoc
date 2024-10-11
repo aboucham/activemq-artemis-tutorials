@@ -162,7 +162,7 @@ broker-prod-east-container Connected on Server AMQP Connection target on broker-
 
 Following with lines for creating the queue `federation-control-link:abc:UUID` and a consumer assigned.
 
-Test :: Queue tracking :: Producer(broker-prod-east) --> Consumer(broker-prod-west)
+==== 2.1 Test :: Queue tracking :: Producer(broker-prod-east) --> Consumer(broker-prod-west)
 
 [source, yaml,indent=0]
 ----
@@ -176,7 +176,7 @@ export POD=broker-prod-west-ss-0
 oc exec -n production-west -i $POD -- /home/jboss/amq-broker/bin/artemis consumer --acceptor all --destination queue://tracking --user admin --password admin --message-count 1
 ----
 
-Test :: Queue tracking :: Producer(broker-prod-west) --> Consumer(broker-prod-east)
+==== 2.2 Test :: Queue tracking :: Producer(broker-prod-west) --> Consumer(broker-prod-east)
 
 [source, yaml,indent=0]
 ----
