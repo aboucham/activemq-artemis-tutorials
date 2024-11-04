@@ -372,3 +372,12 @@ oc exec -n oracle-jdbc-shared-store -i $POD -- /home/jboss/amq-broker/bin/artemi
 export POD=peer-broker-b-ss-0
 oc exec -n oracle-jdbc-shared-store -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://fr.nantes --user admin --password admin --message-count 1 --message 1 
 ----
+
+Check on the DR env:
+
+[source, yaml,indent=0]
+----
+export POD=broker-dr-ss-0
+oc exec -n dr -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
+oc exec -n dr -i $POD -- /home/jboss/amq-broker/bin/artemis queue stat --acceptor all --user admin --password admin
+----
