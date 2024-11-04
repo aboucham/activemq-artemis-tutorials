@@ -1,0 +1,266 @@
+= AMQ Broker High Availability Using jdbc for Database
+  
+== Chapters:
+
+Environment Setup:
+
+- Red Hat Integration - AMQ Broker for RHEL 8 (Multiarch) : 7.11.6-opr-2 provided by Red Hat
+
+Prerequisites:
+
+- Install AMQ Broker Operator:  from OperatorHub
+- Generate certificates using keytool, create a secret for one way TLS: https://access.redhat.com/documentation/en-us/red_hat_amq_broker/7.11/html-single/deploying_amq_broker_on_openshift/index#proc-br-configuring-one-way-tls_broker-ocp[4.10.2.2. Configuring one-way TLS]
+
+=== 1. Setting Up Initial Environment
+
+Create the 'oracle-jdbc-shared-store' namespace: `oc new-project oracle-jdbc-shared-store`
+
+Deploy free Oracle Database version 23.0.0 in the `default` namespace and the corresponding service configuration:
+  
+[source, yaml,indent=0]
+----
+oc apply -f - <<EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oracle-database-deployment
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: oracle-database
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: oracle-database
+    spec:
+      containers:
+        - name: oracle-database-container
+          image: container-registry.oracle.com/database/free:23.3.0.0
+          env:
+            - name: ORACLE_PWD
+              value: secret
+          resources:
+            limits:
+              cpu: 2
+              memory: 4Gi
+          ports:
+            - containerPort: 1521
+          readinessProbe:
+            tcpSocket:
+              port: 1521
+            initialDelaySeconds: 15
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oracle-database-service
+  namespace: default
+spec:
+  selector:
+    app: oracle-database
+  ports:
+    - name: oracle-database-port
+      protocol: TCP
+      port: 1521
+      targetPort: 1521
+EOF
+----
+
+Create the secret `ext-acceptor-ssl-secret` for one-way TLS:
+  
+[source, yaml,indent=0]
+----
+wget -O server-keystore.jks https://github.com/apache/activemq-artemis/raw/main/tests/security-resources/server-keystore.jks
+wget -O server-ca-truststore.jks https://github.com/apache/activemq-artemis/raw/main/tests/security-resources/server-ca-truststore.jks
+wget -O client-ca-truststore.jks https://github.com/apache/activemq-artemis/raw/main/tests/security-resources/client-ca-truststore.jks
+oc create secret generic ext-acceptor-ssl-secret \
+--from-file=broker.ks=server-keystore.jks \
+--from-file=client.ts=client-ca-truststore.jks \
+--from-literal=keyStorePassword=securepass \
+--from-literal=trustStorePassword=securepass
+----
+
+Create two AMQ Brokers `peer-broker-a` and `peer-broker-b` using the following activemqArtemis CRs YAML configuration:
+
+[source, yaml,indent=0]
+----
+oc apply -f - <<EOF
+apiVersion: broker.amq.io/v1beta1
+kind: ActiveMQArtemis
+metadata: 
+  name: peer-broker-a
+spec:
+  deploymentPlan:
+    size: 1
+    clustered: false
+    persistenceEnabled: false
+    labels:
+      peer.group: jdbc-ha
+    livenessProbe:
+      exec:
+        command:
+        - test
+        - -f
+        - /home/jboss/amq-broker/lock/cli.lock
+  env:
+    - name: ARTEMIS_EXTRA_LIBS
+      value: '/amq/init/config/extra-libs'
+  brokerProperties:
+    - 'criticalAnalyser=false'
+    - 'storeConfiguration=DATABASE'
+    - 'storeConfiguration.jdbcDriverClassName=oracle.jdbc.OracleDriver'
+    - 'storeConfiguration.jdbcConnectionUrl=jdbc:oracle:thin:SYSTEM/secret@oracle-database-service.default.svc.cluster.local:1521/FREEPDB1'
+    - 'storeConfiguration.jdbcLockRenewPeriodMillis=2000'
+    - 'storeConfiguration.jdbcLockExpirationMillis=6000'
+    - 'HAPolicyConfiguration=SHARED_STORE_PRIMARY'
+  acceptors:
+  - name: ext-acceptor
+    protocols: CORE
+    port: 61626
+    expose: true
+    sslEnabled: true
+    sslSecret: ext-acceptor-ssl-secret
+  console:
+    expose: true
+  resourceTemplates:
+    - selector:
+        kind: StatefulSet
+      patch:
+        kind: StatefulSet
+        spec:
+          template:
+            spec:
+              initContainers:
+                - name: oracle-database-jdbc-driver-init
+                  image: registry.redhat.io/amq7/amq-broker-rhel8:7.12
+                  volumeMounts:
+                    - name: amq-cfg-dir
+                      mountPath: /amq/init/config
+                  command:
+                    - "bash"
+                    - "-c"
+                    - "mkdir -p /amq/init/config/extra-libs && curl -Lo /amq/init/config/extra-libs/ojdbc11.jar https://download.oracle.com/otn-pub/otn_software/jdbc/233/ojdbc11.jar"
+---
+apiVersion: broker.amq.io/v1beta1
+kind: ActiveMQArtemis
+metadata: 
+  name: peer-broker-b
+spec:
+  deploymentPlan:
+    size: 1
+    clustered: false
+    persistenceEnabled: false
+    labels:
+      peer.group: jdbc-ha
+    livenessProbe:
+      exec:
+        command:
+        - test
+        - -f
+        - /home/jboss/amq-broker/lock/cli.lock
+  env:
+    - name: ARTEMIS_EXTRA_LIBS
+      value: '/amq/init/config/extra-libs'
+  brokerProperties:
+    - 'criticalAnalyser=false'
+    - 'storeConfiguration=DATABASE'
+    - 'storeConfiguration.jdbcDriverClassName=oracle.jdbc.OracleDriver'
+    - 'storeConfiguration.jdbcConnectionUrl=jdbc:oracle:thin:SYSTEM/secret@oracle-database-service.default.svc.cluster.local:1521/FREEPDB1'
+    - 'storeConfiguration.jdbcLockRenewPeriodMillis=2000'
+    - 'storeConfiguration.jdbcLockExpirationMillis=6000'
+    - 'HAPolicyConfiguration=SHARED_STORE_PRIMARY'
+  acceptors:
+  - name: ext-acceptor
+    protocols: CORE
+    port: 61626
+    expose: true
+    sslEnabled: true
+    sslSecret: ext-acceptor-ssl-secret
+  console:
+    expose: true
+  resourceTemplates:
+    - selector:
+        kind: StatefulSet
+      patch:
+        kind: StatefulSet
+        spec:
+          template:
+            spec:
+              initContainers:
+                - name: oracle-database-jdbc-driver-init
+                  image: registry.redhat.io/amq7/amq-broker-rhel8:7.12
+                  volumeMounts:
+                    - name: amq-cfg-dir
+                      mountPath: /amq/init/config
+                  command:
+                    - "bash"
+                    - "-c"
+                    - "mkdir -p /amq/init/config/extra-libs && curl -Lo /amq/init/config/extra-libs/ojdbc11.jar https://download.oracle.com/otn-pub/otn_software/jdbc/233/ojdbc11.jar"
+EOF
+----
+
+Create a service object `ext-acceptor-svc` that regroups both AMQ Broker Pods `peer-broker-a` and `peer-broker-b` using the selector `peer.group: jdbc-ha`:
+
+[source, yaml,indent=0]
+----
+oc apply -f - <<EOF
+apiVersion: v1
+kind: Service
+metadata: 
+  name: ext-acceptor-svc
+spec:
+  ports:
+    - protocol: TCP
+      port: 61626
+      targetPort: 61626
+  selector:
+    peer.group: jdbc-ha
+  type: ClusterIP
+  sessionAffinity: None
+  publishNotReadyAddresses: true
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ext-acceptor-svc-rte
+spec:
+  port:
+    targetPort: 61626
+  tls:
+    termination: passthrough 
+    insecureEdgeTerminationPolicy: None 
+  to:
+    kind: Service
+    name: ext-acceptor-svc
+EOF
+----
+
+      
+[source, yaml,indent=0]
+----
+oc rsh -n default oracle-database-deployment-d87fc4d75-d5wf5 sqlplus SYSTEM/secret@localhost:1521/FREEPDB1
+select * from MESSAGES;
+select * from BINDINGS;
+select * from LARGE_MESSAGES;
+select * from PAGE_STORE;
+----
+
+=== 2. Test the Failover
+
+[source, yaml,indent=0]
+----
+export EXT_ACCEPTOR_HOST=$(oc get route ext-acceptor-svc-rte -o json | jq -r '.spec.host')
+export PEER_BROKER_A_EXT_ACCEPTOR_HOST=$(oc get route peer-broker-a-ext-acceptor-0-svc-rte -o json | jq -r '.spec.host')
+export PEER_BROKER_A_CONSOLE_HOST=$(oc get route peer-broker-a-wconsj-0-svc-rte -o json | jq -r '.spec.host')
+export PEER_BROKER_B_EXT_ACCEPTOR_HOST=$(oc get route peer-broker-b-ext-acceptor-0-svc-rte -o json | jq -r '.spec.host')
+export PEER_BROKER_B_CONSOLE_HOST=$(oc get route peer-broker-b-wconsj-0-svc-rte -o json | jq -r '.spec.host')
+
+## Producer
+/apache-artemis-2.28.0.redhat-00019/bin/artemis producer --verbose --destination queue://TEST --user admin --password admin --protocol core --sleep 1000 --url "tcp://${EXT_ACCEPTOR_HOST}:443?sslEnabled=true&verifyHost=false&trustStorePath=server-ca-truststore.jks&trustStorePassword=securepass&useTopologyForLoadBalancing=false&initialConnectAttempts=-1&failoverAttempts=-1"
+
+## COnsumer
+/apache-artemis-2.28.0.redhat-00019/bin/artemis consumer --verbose --destination queue://TEST --user admin --password admin --protocol core --sleep 1000 --url "tcp://${EXT_ACCEPTOR_HOST}:443?sslEnabled=true&verifyHost=false&trustStorePath=server-ca-truststore.jks&trustStorePassword=securepass&useTopologyForLoadBalancing=false&initialConnectAttempts=-1&failoverAttempts=-1"
+----
