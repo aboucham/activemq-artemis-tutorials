@@ -69,6 +69,18 @@ spec:
 EOF
 ----
 
+NOTE: Please check the Oracle DB pod is up and Running before you proceed with next steps:
+      
+[source, yaml,indent=0]
+----
+oc get pods -n default
+oc rsh -n default oracle-database-deployment-d87fc4d75-d5wf5 sqlplus SYSTEM/secret@localhost:1521/FREEPDB1
+select * from MESSAGES;
+select * from BINDINGS;
+select * from LARGE_MESSAGES;
+select * from PAGE_STORE;
+----
+
 Create the secret `ext-acceptor-ssl-secret` for one-way TLS:
   
 [source, yaml,indent=0]
@@ -236,16 +248,6 @@ spec:
     kind: Service
     name: ext-acceptor-svc
 EOF
-----
-
-      
-[source, yaml,indent=0]
-----
-oc rsh -n default oracle-database-deployment-d87fc4d75-d5wf5 sqlplus SYSTEM/secret@localhost:1521/FREEPDB1
-select * from MESSAGES;
-select * from BINDINGS;
-select * from LARGE_MESSAGES;
-select * from PAGE_STORE;
 ----
 
 === 2. Test the Failover
