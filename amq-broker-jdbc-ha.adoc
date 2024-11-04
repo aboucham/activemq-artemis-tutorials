@@ -381,3 +381,32 @@ export POD=broker-dr-ss-0
 oc exec -n dr -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
 oc exec -n dr -i $POD -- /home/jboss/amq-broker/bin/artemis queue stat --acceptor all --user admin --password admin
 ----
+
+Delete the leader in order to failover 
+
+[source, yaml,indent=0]
+----
+oc delete pods peer-broker-b-ss-0
+pod "peer-broker-b-ss-0" deleted
+oc get pods
+NAME                 READY   STATUS    RESTARTS   AGE
+peer-broker-a-ss-0   1/1     Running   0          5m51s
+peer-broker-b-ss-0   0/1     Running   0          5s
+----
+
+3.Event Producing Messages:
+
+[source, yaml,indent=0]
+----
+export POD=peer-broker-a-ss-0
+oc exec -n oracle-jdbc-shared-store -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://fr.nantes --user admin --password admin --message-count 1 --message 1 
+----
+
+Check on the DR env:
+
+[source, yaml,indent=0]
+----
+export POD=broker-dr-ss-0
+oc exec -n dr -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
+oc exec -n dr -i $POD -- /home/jboss/amq-broker/bin/artemis queue stat --acceptor all --user admin --password admin
+----
