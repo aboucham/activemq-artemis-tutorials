@@ -202,7 +202,7 @@ spec:
 EOF
 ----
 
-Create a service object `ext-acceptor-svc` that regroups both AMQ Broker Pods `peer-broker-a` and `peer-broker-b` using the selector `peer.group: jdbc-ha`:
+Create a service object `ext-acceptor-svc` that regroups both AMQ Broker Pods `peer-broker-a-ss-0` and `peer-broker-b-ss-0` using the selector `peer.group: jdbc-ha`:
 
 [source, yaml,indent=0]
 ----
