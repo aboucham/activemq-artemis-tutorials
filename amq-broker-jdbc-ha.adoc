@@ -410,3 +410,16 @@ export POD=broker-dr-ss-0
 oc exec -n dr -i $POD -- /home/jboss/amq-broker/bin/artemis address show --acceptor all --user admin --password admin
 oc exec -n dr -i $POD -- /home/jboss/amq-broker/bin/artemis queue stat --acceptor all --user admin --password admin
 ----
+
+You should have `two messages` in the queue `fr.nantes`, like:
+
+[source, yaml,indent=0]
+----
+Connection brokerURL = tcp://broker-dr-ss-0.broker-dr-hdls-svc.dr.svc.cluster.local:61616
+|NAME              |ADDRESS           |CONSUMER|MESSAGE|MESSAGES|DELIVERING|MESSAGES|SCHEDULED|ROUTING|INTERNAL|
+|                  |                  | COUNT  | COUNT | ADDED  |  COUNT   | ACKED  |  COUNT  | TYPE  |        |
+|$sys.mqtt.sessions|$sys.mqtt.sessions|   0    |   0   |   0    |    0     |   0    |    0    |ANYCAST|  true  |
+|DLQ               |DLQ               |   0    |   0   |   0    |    0     |   0    |    0    |ANYCAST| false  |
+|ExpiryQueue       |ExpiryQueue       |   0    |   0   |   0    |    0     |   0    |    0    |ANYCAST| false  |
+|fr.nantes         |fr.nantes         |   0    |   2   |   2    |    0     |   0    |    0    |ANYCAST| false  |
+----
