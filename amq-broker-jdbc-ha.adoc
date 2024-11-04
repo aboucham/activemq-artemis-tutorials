@@ -336,3 +336,39 @@ Setup `Mirroring` using `brokerProperties` on the two AMQ Brokers `peer-broker-a
     - AMQPConnections.dr.connectionElements.mirror.queueCreation=true
     - AMQPConnections.dr.connectionElements.mirror.queueRemoval=true
 ----
+
+==== 7.1 Mirror Events:
+
+Locate the `leader` pod using `oc get pods`:
+
+[source, yaml,indent=0]
+----
+oc get pods
+NAME                 READY   STATUS    RESTARTS   AGE
+peer-broker-a-ss-0   0/1     Running   0          86s
+peer-broker-b-ss-0   1/1     Running   0          87s
+----
+
+1.Event: Creating Address:
+
+[source, yaml,indent=0]
+----
+export POD=peer-broker-b-ss-0
+oc exec -n production -i $POD -- /home/jboss/amq-broker/bin/artemis address create --acceptor all --anycast --no-multicast --name fr.nantes --user admin --password admin 
+----
+
+2.Event: Creating Queue:
+
+[source, yaml,indent=0]
+----
+export POD=peer-broker-b-ss-0
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis queue create --name fr.nantes --address fr.nantes --anycast --durable --user admin --password admin --acceptor all --silent
+----
+
+3.Event Producing Messages:
+
+[source, yaml,indent=0]
+----
+export POD=peer-broker-b-ss-0
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://fr.nantes --user admin --password admin --message-count 1 --message 1 
+----
