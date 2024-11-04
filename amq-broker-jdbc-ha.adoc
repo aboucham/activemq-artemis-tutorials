@@ -266,3 +266,57 @@ export PEER_BROKER_B_CONSOLE_HOST=$(oc get route peer-broker-b-wconsj-0-svc-rte 
 ## COnsumer
 /apache-artemis-2.28.0.redhat-00019/bin/artemis consumer --verbose --destination queue://TEST --user admin --password admin --protocol core --sleep 1000 --url "tcp://${EXT_ACCEPTOR_HOST}:443?sslEnabled=true&verifyHost=false&trustStorePath=server-ca-truststore.jks&trustStorePassword=securepass&useTopologyForLoadBalancing=false&initialConnectAttempts=-1&failoverAttempts=-1"
 ----
+
+=== 3. Setup the Mirroring for DR env.
+
+- DR Env:
+
+Create the 'DR' namespace: `oc new-project dr`
+
+Create AMQ Broker using activemqArtemis CR YAML configuration
+
+[source, yaml,indent=0]
+----
+oc create -f - <<EOF
+apiVersion: broker.amq.io/v1beta1
+kind: ActiveMQArtemis
+metadata:
+ name: broker-dr
+ namespace: dr
+spec:
+  acceptors:
+    - expose: true
+      name: all
+      port: 61616
+      protocols: all
+      sslEnabled: false
+    - expose: true
+      name: amqp
+      port: 5672
+      protocols: amqp
+      sslEnabled: false
+  adminPassword: admin
+  adminUser: admin
+  brokerProperties:
+    - maxDiskUsage=85
+    - clusterConfigurations.my-cluster.producerWindowSize=-1
+    - 'addressSettings.#.redeliveryMultiplier=5'
+    - criticalAnalyzer=true
+    - criticalAnalyzerTimeout=6000
+    - criticalAnalyzerCheckPeriod=-1     
+    - criticalAnalyzerPolicy=LOG
+  console:
+    expose: true
+  deploymentPlan:
+    size: 1
+    persistenceEnabled: true
+    requireLogin: false
+    messageMigration: true
+    managementRBACEnabled: true
+    journalType: aio
+    enableMetricsPlugin: true
+    jolokiaAgentEnabled: true
+    clustered: true
+    image: placeholder
+EOF
+----
