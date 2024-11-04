@@ -354,7 +354,7 @@ peer-broker-b-ss-0   1/1     Running   0          87s
 [source, yaml,indent=0]
 ----
 export POD=peer-broker-b-ss-0
-oc exec -n production -i $POD -- /home/jboss/amq-broker/bin/artemis address create --acceptor all --anycast --no-multicast --name fr.nantes --user admin --password admin 
+oc exec -n oracle-jdbc-shared-store -i $POD -- /home/jboss/amq-broker/bin/artemis address create --acceptor all --anycast --no-multicast --name fr.nantes --user admin --password admin 
 ----
 
 2.Event: Creating Queue:
@@ -362,7 +362,7 @@ oc exec -n production -i $POD -- /home/jboss/amq-broker/bin/artemis address crea
 [source, yaml,indent=0]
 ----
 export POD=peer-broker-b-ss-0
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis queue create --name fr.nantes --address fr.nantes --anycast --durable --user admin --password admin --acceptor all --silent
+oc exec -n oracle-jdbc-shared-store -i $POD -- /home/jboss/amq-broker/bin/artemis queue create --name fr.nantes --address fr.nantes --anycast --durable --user admin --password admin --acceptor all --silent
 ----
 
 3.Event Producing Messages:
@@ -370,5 +370,5 @@ oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis queue create --name fr.nan
 [source, yaml,indent=0]
 ----
 export POD=peer-broker-b-ss-0
-oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://fr.nantes --user admin --password admin --message-count 1 --message 1 
+oc exec -n oracle-jdbc-shared-store -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://fr.nantes --user admin --password admin --message-count 1 --message 1 
 ----
