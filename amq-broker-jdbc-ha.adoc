@@ -320,3 +320,19 @@ spec:
     image: placeholder
 EOF
 ----
+
+Setup `Mirroring` using `brokerProperties` on the two AMQ Brokers `peer-broker-a` and `peer-broker-b` in the namespace `oracle-jdbc-shared-store` namespace: `oc project oracle-jdbc-shared-store`:
+
+[source, yaml,indent=0]
+----
+    - >-
+      AMQPConnections.dr.uri=tcp://broker-dr-all-0-svc.dr.svc.cluster.local:61616
+    - AMQPConnections.dr.retryInterval=5000
+    - AMQPConnections.dr.user=admin
+    - AMQPConnections.dr.password=admin
+    - AMQPConnections.dr.connectionElements.mirror.type=MIRROR
+    - >-
+      AMQPConnections.dr.connectionElements.mirror.messageAcknowledgements=true
+    - AMQPConnections.dr.connectionElements.mirror.queueCreation=true
+    - AMQPConnections.dr.connectionElements.mirror.queueRemoval=true
+----
