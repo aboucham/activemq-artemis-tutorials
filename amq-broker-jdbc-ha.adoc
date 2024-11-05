@@ -73,11 +73,6 @@ NOTE: Please check the Oracle DB pod is up and Running before you proceed with n
 [source, yaml,indent=0]
 ----
 oc get pods -n default
-oc rsh -n default oracle-database-deployment-d87fc4d75-d5wf5 sqlplus SYSTEM/secret@localhost:1521/FREEPDB1
-select * from MESSAGES;
-select * from BINDINGS;
-select * from LARGE_MESSAGES;
-select * from PAGE_STORE;
 ----
 
 Create the secret `ext-acceptor-ssl-secret` for one-way TLS:
@@ -211,6 +206,18 @@ spec:
                     - "-c"
                     - "mkdir -p /amq/init/config/extra-libs && curl -Lo /amq/init/config/extra-libs/ojdbc11.jar https://download.oracle.com/otn-pub/otn_software/jdbc/233/ojdbc11.jar"
 EOF
+----
+
+NOTE: You can check the Oracle DB again to see if it was updated with relevant tables:
+      
+[source, yaml,indent=0]
+----
+oc get pods -n default
+oc rsh -n default oracle-database-deployment-d87fc4d75-d5wf5 sqlplus SYSTEM/secret@localhost:1521/FREEPDB1
+select * from MESSAGES;
+select * from BINDINGS;
+select * from LARGE_MESSAGES;
+select * from PAGE_STORE;
 ----
 
 Create a service object `ext-acceptor-svc` in the namespace `oracle-jdbc-shared-store` that regroups both AMQ Broker Pods `peer-broker-a-ss-0` and `peer-broker-b-ss-0` using the selector `peer.group: jdbc-ha`:
