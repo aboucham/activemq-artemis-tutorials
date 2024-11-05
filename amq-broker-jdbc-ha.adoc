@@ -255,10 +255,6 @@ EOF
 [source, yaml,indent=0]
 ----
 export EXT_ACCEPTOR_HOST=$(oc get route ext-acceptor-svc-rte -o json | jq -r '.spec.host')
-export PEER_BROKER_A_EXT_ACCEPTOR_HOST=$(oc get route peer-broker-a-ext-acceptor-0-svc-rte -o json | jq -r '.spec.host')
-export PEER_BROKER_A_CONSOLE_HOST=$(oc get route peer-broker-a-wconsj-0-svc-rte -o json | jq -r '.spec.host')
-export PEER_BROKER_B_EXT_ACCEPTOR_HOST=$(oc get route peer-broker-b-ext-acceptor-0-svc-rte -o json | jq -r '.spec.host')
-export PEER_BROKER_B_CONSOLE_HOST=$(oc get route peer-broker-b-wconsj-0-svc-rte -o json | jq -r '.spec.host')
 
 ## Producer
 /apache-artemis-2.28.0.redhat-00019/bin/artemis producer --verbose --destination queue://TEST --user admin --password admin --protocol core --sleep 1000 --url "tcp://${EXT_ACCEPTOR_HOST}:443?sslEnabled=true&verifyHost=false&trustStorePath=server-ca-truststore.jks&trustStorePassword=securepass&useTopologyForLoadBalancing=false&initialConnectAttempts=-1&failoverAttempts=-1"
