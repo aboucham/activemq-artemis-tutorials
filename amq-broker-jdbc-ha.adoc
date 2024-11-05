@@ -95,7 +95,7 @@ oc create secret generic ext-acceptor-ssl-secret \
 --from-literal=trustStorePassword=securepass
 ----
 
-Create two AMQ Brokers `peer-broker-a` and `peer-broker-b` using the following activemqArtemis CRs YAML configuration:
+Create two AMQ Brokers `peer-broker-a` and `peer-broker-b` in the namespace `oracle-jdbc-shared-store` using the following activemqArtemis CRs YAML configuration:
 
 [source, yaml,indent=0]
 ----
@@ -214,7 +214,7 @@ spec:
 EOF
 ----
 
-Create a service object `ext-acceptor-svc` that regroups both AMQ Broker Pods `peer-broker-a-ss-0` and `peer-broker-b-ss-0` using the selector `peer.group: jdbc-ha`:
+Create a service object `ext-acceptor-svc` in the namespace `oracle-jdbc-shared-store` that regroups both AMQ Broker Pods `peer-broker-a-ss-0` and `peer-broker-b-ss-0` using the selector `peer.group: jdbc-ha`:
 
 [source, yaml,indent=0]
 ----
