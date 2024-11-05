@@ -9,7 +9,6 @@ Environment Setup:
 Prerequisites:
 
 - Install AMQ Broker Operator:  from OperatorHub
-- Generate certificates using keytool, create a secret for one way TLS: https://access.redhat.com/documentation/en-us/red_hat_amq_broker/7.11/html-single/deploying_amq_broker_on_openshift/index#proc-br-configuring-one-way-tls_broker-ocp[4.10.2.2. Configuring one-way TLS]
 
 === 1. Setting Up Initial Environment
 
