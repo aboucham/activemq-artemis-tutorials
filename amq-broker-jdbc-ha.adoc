@@ -318,7 +318,6 @@ spec:
     journalType: aio
     enableMetricsPlugin: true
     jolokiaAgentEnabled: true
-    clustered: true
     image: placeholder
 EOF
 ----
