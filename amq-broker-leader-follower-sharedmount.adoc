@@ -141,7 +141,7 @@ oc apply -f - <<EOF
 apiVersion: v1
 kind: Service
 metadata:
-  name: ext-acceptor-svc
+  name: acceptor-svc
 spec:
   ports:
     - protocol: TCP
