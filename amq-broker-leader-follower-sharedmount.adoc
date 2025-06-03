@@ -209,8 +209,8 @@ EOF
 export EXT_ACCEPTOR_HOST=$(oc get route ext-acceptor-svc-rte -o json | jq -r '.spec.host')
 
 ## Producer
-/apache-artemis-2.28.0.redhat-00019/bin/artemis producer --verbose --destination queue://TEST --user admin --password admin --protocol core --sleep 1000 --url "tcp://${EXT_ACCEPTOR_HOST}:443?sslEnabled=true&verifyHost=false&trustStorePath=server-ca-truststore.jks&trustStorePassword=securepass&useTopologyForLoadBalancing=false&initialConnectAttempts=-1&failoverAttempts=-1"
+bin/artemis producer --verbose --destination queue://TEST --user admin --password admin --protocol core --sleep 1000 --url "tcp://${EXT_ACCEPTOR_HOST}:443?sslEnabled=true&verifyHost=false&trustStorePath=server-ca-truststore.jks&trustStorePassword=securepass&useTopologyForLoadBalancing=false&initialConnectAttempts=-1&failoverAttempts=-1"
 
-## COnsumer
-/apache-artemis-2.28.0.redhat-00019/bin/artemis consumer --verbose --destination queue://TEST --user admin --password admin --protocol core --sleep 1000 --url "tcp://${EXT_ACCEPTOR_HOST}:443?sslEnabled=true&verifyHost=false&trustStorePath=server-ca-truststore.jks&trustStorePassword=securepass&useTopologyForLoadBalancing=false&initialConnectAttempts=-1&failoverAttempts=-1"
+## Consumer
+bin/artemis consumer --verbose --destination queue://TEST --user admin --password admin --protocol core --sleep 1000 --url "tcp://${EXT_ACCEPTOR_HOST}:443?sslEnabled=true&verifyHost=false&trustStorePath=server-ca-truststore.jks&trustStorePassword=securepass&useTopologyForLoadBalancing=false&initialConnectAttempts=-1&failoverAttempts=-1"
 ----
