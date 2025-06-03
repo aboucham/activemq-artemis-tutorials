@@ -43,6 +43,21 @@ NAME            STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   VOLU
 shared-volume   Pending                                      gp3-csi        <unset>                 7s
 ----
 
+Create the secret `ext-acceptor-ssl-secret` for one-way TLS:
+  
+[source, yaml,indent=0]
+----
+wget -O server-keystore.jks https://github.com/apache/activemq-artemis/raw/main/tests/security-resources/server-keystore.jks
+wget -O server-ca-truststore.jks https://github.com/apache/activemq-artemis/raw/main/tests/security-resources/server-ca-truststore.jks
+wget -O client-ca-truststore.jks https://github.com/apache/activemq-artemis/raw/main/tests/security-resources/client-ca-truststore.jks
+oc create secret generic ext-acceptor-ssl-secret \
+--from-file=broker.ks=server-keystore.jks \
+--from-file=client.ts=client-ca-truststore.jks \
+--from-literal=keyStorePassword=securepass \
+--from-literal=trustStorePassword=securepass
+----
+
+
 Create two AMQ Brokers `peer-broker-a` and `peer-broker-b` in the namespace `activemq` using the following activemqArtemis CRs YAML configuration:
 
 [source, yaml,indent=0]
@@ -59,6 +74,15 @@ spec:
   - pagingDirectory=/opt/amq-broker/data/paging,
   - bindingsDirectory=/opt/amq-broker/data/bindings
   - largeMessagesDirectory=/opt/amq-broker/data/largemessages
+  acceptors:
+  - name: ext-acceptor
+    protocols: CORE
+    port: 61626
+    expose: true
+    sslEnabled: true
+    sslSecret: ext-acceptor-ssl-secret
+  console:
+    expose: true
   deploymentPlan:
     labels:
       peer.group: peer-broker
@@ -90,6 +114,15 @@ spec:
   - pagingDirectory=/opt/amq-broker/data/paging,
   - bindingsDirectory=/opt/amq-broker/data/bindings
   - largeMessagesDirectory=/opt/amq-broker/data/largemessages
+  acceptors:
+  - name: ext-acceptor
+    protocols: CORE
+    port: 61626
+    expose: true
+    sslEnabled: true
+    sslSecret: ext-acceptor-ssl-secret
+  console:
+    expose: true
   deploymentPlan:
     labels:
       peer.group: peer-broker
@@ -140,18 +173,32 @@ Create a service object `ext-acceptor-svc` in the namespace `oracle-jdbc-shared-
 oc apply -f - <<EOF
 apiVersion: v1
 kind: Service
-metadata:
-  name: acceptor-svc
+metadata: 
+  name: ext-acceptor-svc
 spec:
   ports:
     - protocol: TCP
-      port: 61616
-      targetPort: 61616
+      port: 61626
+      targetPort: 61626
   selector:
-    peer.group: peer-broker
+    peer.group: jdbc-ha
   type: ClusterIP
   sessionAffinity: None
   publishNotReadyAddresses: true
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: ext-acceptor-svc-rte
+spec:
+  port:
+    targetPort: 61626
+  tls:
+    termination: passthrough 
+    insecureEdgeTerminationPolicy: None 
+  to:
+    kind: Service
+    name: ext-acceptor-svc
 EOF
 ----
 
