@@ -84,6 +84,12 @@ spec:
   console:
     expose: true
   deploymentPlan:
+    livenessProbe:
+      exec:
+        command:
+        - test
+        - -f
+        - /home/jboss/amq-broker/lock/cli.lock
     labels:
       peer.group: peer-broker
     size: 1
@@ -96,12 +102,6 @@ spec:
     extraVolumeMounts:
     - name: extra-volume
       mountPath: /opt/amq-broker/data
-  livenessProbe:
-    exec:
-      command:
-      - test
-      - -f
-      - /home/jboss/amq-broker/lock/cli.lock
 ---
 apiVersion: broker.amq.io/v1beta1
 kind: ActiveMQArtemis
@@ -124,6 +124,12 @@ spec:
   console:
     expose: true
   deploymentPlan:
+    livenessProbe:
+      exec:
+        command:
+        - test
+        - -f
+        - /home/jboss/amq-broker/lock/cli.lock
     labels:
       peer.group: peer-broker
     size: 1
