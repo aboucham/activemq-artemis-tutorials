@@ -166,7 +166,7 @@ peer-broker-a-ss-0   1/1     Running            0                72m
 peer-broker-b-ss-0   0/1     Running            27 (3m36s ago)   72m
 ----
 
-Create a service object `ext-acceptor-svc` in the namespace `oracle-jdbc-shared-store` that regroups both AMQ Broker Pods `peer-broker-a-ss-0` and `peer-broker-b-ss-0` using the selector `peer.group: jdbc-ha`:
+Create a service object `ext-acceptor-svc` in the namespace `activemq` that regroups both AMQ Broker Pods `peer-broker-a-ss-0` and `peer-broker-b-ss-0` using the selector `peer.group: peer-broker`:
 
 [source, yaml,indent=0]
 ----
@@ -181,7 +181,7 @@ spec:
       port: 61626
       targetPort: 61626
   selector:
-    peer.group: jdbc-ha
+    peer.group: peer-broker
   type: ClusterIP
   sessionAffinity: None
   publishNotReadyAddresses: true
