@@ -83,6 +83,8 @@ spec:
     sslSecret: ext-acceptor-ssl-secret
   console:
     expose: true
+  adminUser: admin
+  adminPassword: admin
   deploymentPlan:
     livenessProbe:
       exec:
@@ -123,6 +125,8 @@ spec:
     sslSecret: ext-acceptor-ssl-secret
   console:
     expose: true
+  adminUser: admin
+  adminPassword: admin
   deploymentPlan:
     livenessProbe:
       exec:
