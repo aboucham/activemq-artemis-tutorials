@@ -146,12 +146,6 @@ spec:
     extraVolumeMounts:
     - name: extra-volume
       mountPath: /opt/amq-broker/data
-  livenessProbe:
-    exec:
-      command:
-      - test
-      - -f
-      - /home/jboss/amq-broker/lock/cli.lock
 EOF
 ----
 
