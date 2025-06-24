@@ -13,7 +13,7 @@ spec:
       name: amqp
       port: 5672
       protocols: amqp
-      sslEnabled: true
+      sslEnabled: false
       sslSecret: mytlssecret
   adminPassword: admin
   adminUser: admin
