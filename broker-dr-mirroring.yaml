@@ -25,6 +25,16 @@ spec:
     - criticalAnalyzerTimeout=6000
     - criticalAnalyzerCheckPeriod=-1
     - criticalAnalyzerPolicy=LOG
+    - >-
+      AMQPConnections.prod.uri=tcp://broker-prod-all-0-svc.dr.svc.cluster.local:61616
+    - AMQPConnections.prod.retryInterval=5000
+    - AMQPConnections.prod.user=admin
+    - AMQPConnections.prod.password=admin
+    - AMQPConnections.prod.connectionElements.mirror.type=MIRROR
+    - >-
+      AMQPConnections.prod.connectionElements.mirror.messageAcknowledgements=true
+    - AMQPConnections.prod.connectionElements.mirror.queueCreation=true
+    - AMQPConnections.prod.connectionElements.mirror.queueRemoval=true
   console:
     expose: true
   deploymentPlan:
