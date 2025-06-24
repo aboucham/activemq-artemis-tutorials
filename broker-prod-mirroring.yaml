@@ -46,4 +46,4 @@ spec:
     enableMetricsPlugin: true
     jolokiaAgentEnabled: true
     clustered: true
-    image: placeholder
+  version: '7.12'
