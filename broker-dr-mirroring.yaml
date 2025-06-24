@@ -48,3 +48,4 @@ spec:
     jolokiaAgentEnabled: true
     clustered: false
     image: placeholder
+  version: '7.12'
