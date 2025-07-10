@@ -137,7 +137,7 @@ spec:
     labels:
       peer.group: peer-broker
     size: 1
-    persistenceEnabled: true
+    persistenceEnabled: false
     clustered: false
     extraVolumes:
     - name: extra-volume
