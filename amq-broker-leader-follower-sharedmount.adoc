@@ -26,7 +26,8 @@ metadata:
   namespace: activemq
 spec:
   accessModes:
-    - ReadWriteMany
+# It must be - ReadWriteMany, please do the change
+    - ReadWriteOnce
   volumeMode: Filesystem
   resources:
     requests:
