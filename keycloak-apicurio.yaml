@@ -2,6 +2,7 @@ apiVersion: keycloak.org/v1alpha1
 kind: Keycloak
 metadata:
   name: keycloak
+  namespace: sso
   labels:
     app: sso
 spec:
@@ -15,6 +16,7 @@ apiVersion: keycloak.org/v1alpha1
 kind: KeycloakRealm
 metadata:
   name: registry-keycloakrealm
+  namespace: sso
 spec:
   instanceSelector:
     matchLabels:
