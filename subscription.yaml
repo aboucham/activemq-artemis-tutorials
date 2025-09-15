@@ -1,0 +1,59 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  labels:
+    operators.coreos.com/amq-streams.openshift-operators: ""
+  name: amq-streams
+  namespace: openshift-operators
+spec:
+  channel: stable
+  installPlanApproval: Automatic
+  name: amq-streams
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: amqstreams.v3.0.0-13
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  labels:
+    operators.coreos.com/amq-broker-rhel9.openshift-operators: ""
+  name: amq-broker-rhel9
+  namespace: openshift-operators
+spec:
+  channel: 7.13.x
+  installPlanApproval: Automatic
+  name: amq-broker-rhel9
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: amq-broker-operator.v7.13.1-opr-1-0.1756381365.p
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  labels:
+    operators.coreos.com/amq-streams-console.openshift-operators: ""
+  name: amq-streams-console
+  namespace: openshift-operators
+spec:
+  channel: alpha
+  installPlanApproval: Automatic
+  name: amq-streams-console
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: amq-streams-console.v3.0.0-10
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  labels:
+    operators.coreos.com/apicurio-registry-3.openshift-operators: ""
+  name: apicurio-registry-3
+  namespace: openshift-operators
+spec:
+  channel: 3.x
+  installPlanApproval: Automatic
+  name: apicurio-registry-3
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: apicurio-registry-3.v3.0.9-r3
