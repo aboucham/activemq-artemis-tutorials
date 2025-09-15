@@ -1,0 +1,162 @@
+---
+apiVersion: keycloak.org/v1alpha1
+kind: Keycloak
+metadata:
+  name: amq-broker-sso
+  namespace: sso
+  labels:
+    app: sso
+spec:
+  instances: 1
+  externalAccess:
+    enabled: true
+  keycloakDeploymentSpec:
+    resources:
+      requests:
+        cpu: "500m"
+      limits:
+        cpu: "1"
+---
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakRealm
+metadata:
+  name: amq-broker-realm
+  namespace: sso
+  labels:
+    app: sso
+spec:
+  realm:
+    id: "amq-broker-realm"
+    realm: "amq-broker-realm"
+    enabled: true
+    displayName: "Basic Realm for AMQ Broker and AMQ Console"
+  instanceSelector:
+    matchLabels:
+      app: sso
+---
+---
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakClient
+metadata:
+  name: amq-broker
+  namespace: sso
+  labels:
+    app: sso
+spec:
+  realmSelector:
+     matchLabels:
+      app: sso
+  roles:
+    - name: admin
+    - name: consumer
+    - name: sender
+    - name: guest
+  client:
+    clientId: amq-broker
+    name: amq-broker
+    description: Client to consume or publish messages into an AMQ Broker
+    protocol: openid-connect
+    clientAuthenticatorType: client-secret
+    secret: amq-broker-secret-value
+    standardFlowEnabled: false
+    directAccessGrantsEnabled: true
+    serviceAccountsEnabled: false
+    defaultRoles:
+      - guest
+    defaultClientScopes:
+      - email
+      - profile
+      - roles
+      - web-origins
+    optionalClientScopes:
+      - address
+      - microprofile-jwt
+      - offline_access
+      - phone
+---
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakUser
+metadata:
+  name: admin
+  namespace: sso
+  labels:
+    app: sso
+spec:
+  user:
+    username: "admin"
+    firstName: "Admin"
+    lastName: "AMQ Brokers"
+    enabled: true
+    emailVerified: false
+    credentials:
+      - type: "password"
+        value: "password"
+    realmRoles:
+      - "default-roles-amq-broker-realm"
+    clientRoles:
+      amq-broker:
+        - "admin"
+      amq-console:
+        - "admin"
+      realm-management:
+        - "amq-broker-realm"
+  realmSelector:
+    matchLabels:
+      app: sso
+---
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakUser
+metadata:
+  name: admin-viewer
+  namespace: sso
+  labels:
+    app: sso
+spec:
+  user:
+    username: "admin-viewer"
+    firstName: "Admin Viewer"
+    lastName: "AMQ Brokers"
+    enabled: true
+    emailVerified: false
+    credentials:
+      - type: "password"
+        value: "password"
+    realmRoles:
+      - "default-roles-amq-broker-realm"
+    clientRoles:
+      amq-console:
+        - "viewer"
+      realm-management:
+        - "amq-broker-realm"
+  realmSelector:
+    matchLabels:
+      app: sso
+---
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakUser
+metadata:
+  name: application
+  namespace: sso
+  labels:
+    app: sso
+spec:
+  user:
+    username: "application"
+    firstName: "Application"
+    lastName: "User"
+    enabled: true
+    emailVerified: false
+    credentials:
+      - type: "password"
+        value: "password"
+    realmRoles:
+      - "default-roles-amq-broker-realm"
+    clientRoles:
+      amq-broker:
+        - "consumer"
+        - "sender"
+      realm-management:
+        - "amq-broker-realm"
+  realmSelector:
+    matchLabels:
+      app: sso
