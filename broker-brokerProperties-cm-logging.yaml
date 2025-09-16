@@ -72,9 +72,6 @@ spec:
     - securityRoles."activemq.management.#".admin.consume=true
     - securityRoles."activemq.management.#".admin.manage=true
     - securityRoles."activemq.management.#".admin.send=true
-    - securityRoles."#".console-user.is=true
-    - securityRoles."#".console-user.get=true
-    - securityRoles."#".console-user.list=true
   console:
     expose: true
   deploymentPlan:
