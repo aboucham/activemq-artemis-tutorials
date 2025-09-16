@@ -33,6 +33,7 @@ spec:
   adminPassword: admin
   adminUser: admin
   brokerProperties:
+## Test ::: https://github.com/apache/activemq-artemis/blob/main/artemis-server/src/test/java/org/apache/activemq/artemis/core/config/impl/ConfigurationImplTest.java#L1621
     - maxDiskUsage=85
     - clusterConfigurations.my-cluster.producerWindowSize=-1
     - 'addressSettings.#.redeliveryMultiplier=5'
