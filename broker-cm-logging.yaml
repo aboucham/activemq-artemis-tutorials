@@ -40,7 +40,7 @@ spec:
     - criticalAnalyzerTimeout=6000
     - criticalAnalyzerCheckPeriod=-1 
     - criticalAnalyzerPolicy=LOG
-    - securityRoles."mops.address.#.getAddressNames".batchRole.view=true
+    - securityRoles."mops.address.*.getAddressNames".batchRole.view=true
     - securityRoles."mops.address.batch.stream.*.getMessageCount".batchRole.view=true
   console:
     expose: true
