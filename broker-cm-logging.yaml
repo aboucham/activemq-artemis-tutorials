@@ -44,10 +44,10 @@ spec:
     - securityRoles."mops.address.batch.stream.*.getMessageCount".batchRole.view=true
   console:
     expose: true
-  extraMounts:
-    configMaps:
-      - custom-logging-config
   deploymentPlan:
+    extraMounts:
+      configMaps:
+        - custom-logging-config
     size: 1
     persistenceEnabled: true
     requireLogin: false
