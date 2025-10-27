@@ -59,7 +59,7 @@ oc create -n keycloak secret tls example-tls-secret --cert certificate.pem --key
 [source, bash]
 ----
 export KEYCLOAK_HOST_URL=keycloak-host.apps.abouchama-ai.emea.aws.cee.support
-curl -sL https://raw.githubusercontent.com/aboucham/strimzi-kafka-tutorial/refs/heads/main/keycloak/keycloak-install.yaml | \
+curl -sL https://raw.githubusercontent.com/aboucham/activemq-artemis-tutorials/refs/heads/main/keycloak/keycloak-install.yaml | \
 envsubst | \
 oc apply -n keycloak -f -
 ----
