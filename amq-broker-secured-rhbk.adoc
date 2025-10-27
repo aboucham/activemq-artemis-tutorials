@@ -76,8 +76,7 @@ kubectl get secret -n keycloak example-kc-initial-admin -o jsonpath='{.data.pass
 
 [source, bash]
 ----
-oc project keycloak
-oc apply -f https://raw.githubusercontent.com/aboucham/apicurio-registry/refs/heads/main/keycloak/apicurio-registry-KeycloakRealmImport.yaml
+oc apply -n keycloak -f https://raw.githubusercontent.com/aboucham/activemq-artemis-tutorials/refs/heads/main/keycloak/amq-broker-realm-KeycloakRealmImport.yaml
 ----
 
 == Deploy AMQ Broker
