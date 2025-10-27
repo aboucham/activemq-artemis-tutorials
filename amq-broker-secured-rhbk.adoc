@@ -200,15 +200,7 @@ oc create secret -n amq generic keycloak-jaas-config --from-file=login.config --
 
 [source, bash]
 ----
-oc new-project amq
-oc project amq
-
-export APPLICATION_NAME="registry"
-export KEYCLOAK_INGRESS_URL="keycloak-host.apps.aboucham.emea.aws.cee.support/realms/registry"
-export APP_INGRESS_URL="registry-app.apps.aboucham.emea.aws.cee.support"
-export UI_INGRESS_URL="registry-ui.apps.aboucham.emea.aws.cee.support"
-
-curl -sL https://raw.githubusercontent.com/aboucham/apicurio-registry/refs/heads/main/ApicurioRegistry3-Keycloak.yaml | \
+curl -sL https://raw.githubusercontent.com/aboucham/activemq-artemis-tutorials/refs/heads/main/activemqartemis-ex-aao-rhbk.yaml | \
 envsubst | \
-oc apply -f -
+oc apply -n amq -f -
 ----
