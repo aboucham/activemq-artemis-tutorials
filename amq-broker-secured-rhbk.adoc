@@ -198,9 +198,24 @@ EOF
 oc create secret -n amq generic keycloak-jaas-config --from-file=login.config --from-file=_keycloak-bearer-token.json --from-file=_keycloak-js-client.json --from-file=_keycloak-direct-access.json
 ----
 
+- Deploy an AMQ Broker cluster with the console and monitoring properties enabled in the namespace amq. Example file attached: `activemqartemis-ex-aao-rhbk.yaml`. The deployment requires a secret to be created with the name `mytlssecret` for the console to be secured in `HTTPs`:
+
+[source, bash,indent=0]
+----
+export SECRET_NAME=mytlssecret
+export keyStorePassword=password
+export trustStorePassword=password
+
+oc create secret generic $SECRET_NAME \
+--from-file=broker.ks=broker.ks \
+--from-file=client.ts=client.ts \
+--from-literal=keyStorePassword=$keyStorePassword \
+--from-literal=trustStorePassword=$trustStorePassword
+----
+
+
+
 [source, bash]
 ----
-curl -sL https://raw.githubusercontent.com/aboucham/activemq-artemis-tutorials/refs/heads/main/activemqartemis-ex-aao-rhbk.yaml | \
-envsubst | \
-oc apply -n amq -f -
+oc apply -n amq -f https://raw.githubusercontent.com/aboucham/activemq-artemis-tutorials/refs/heads/main/activemqartemis-ex-aao-rhbk.yaml
 ----
