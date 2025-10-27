@@ -1,0 +1,94 @@
+# Deploy Keycloak 26 Instance:
+#Create secret example-tls-secret required for the https exposed by the KeyCloak instance. The KEYCLOAK_HOST_URL must be defined in the CN= in the following:
+#openssl req -subj '/CN=keycloak-host.apps.abouchama-ai.emea.aws.cee.support/O=Keycloak-host/C=US' -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out certificate.pem
+#oc create secret tls example-tls-secret --cert certificate.pem --key key.pem
+#
+#
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql-db
+spec:
+  serviceName: postgresql-db-service
+  selector:
+    matchLabels:
+      app: postgresql-db
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: postgresql-db
+    spec:
+      containers:
+        - name: postgresql-db
+          image: postgres:15
+          volumeMounts:
+            - mountPath: /data
+              name: cache-volume
+          env:
+            - name: POSTGRES_USER
+              value: testuser
+            - name: POSTGRES_PASSWORD
+              value: testpassword
+            - name: PGDATA
+              value: /data/pgdata
+            - name: POSTGRES_DB
+              value: keycloak
+      volumes:
+        - name: cache-volume
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-db
+spec:
+  selector:
+    app: postgresql-db
+  type: LoadBalancer
+  ports:
+  - port: 5432
+    targetPort: 5432
+---
+# -----------------------------------------------------------------------------
+apiVersion: v1
+kind: Secret
+metadata:
+  name: keycloak-db-secret
+type: Opaque
+data:
+  username: dGVzdHVzZXI=
+  password: dGVzdHBhc3N3b3Jk
+#---
+#kind: Secret
+#apiVersion: v1
+#metadata:
+#  name: example-tls-secret
+#  namespace: keycloak
+#data:
+#  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURxVENDQXBHZ0F3SUJBZ0lVSFozKzAyNitTVVp5WEtyaHJOYmdWY0syakFNd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1pERTlNRHNHQTFVRUF3dzBhMlY1WTJ4dllXc3RhRzl6ZEM1aGNIQnpMbUZpYjNWamFHRnRZUzFoYVM1bApiV1ZoTG1GM2N5NWpaV1V1YzNWd2NHOXlkREVXTUJRR0ExVUVDZ3dOUzJWNVkyeHZZV3N0YUc5emRERUxNQWtHCkExVUVCaE1DVlZNd0hoY05NalV4TURBek1UQXlNalF3V2hjTk1qWXhNREF6TVRBeU1qUXdXakJrTVQwd093WUQKVlFRREREUnJaWGxqYkc5aGF5MW9iM04wTG1Gd2NITXVZV0p2ZFdOb1lXMWhMV0ZwTG1WdFpXRXVZWGR6TG1ObApaUzV6ZFhCd2IzSjBNUll3RkFZRFZRUUtEQTFMWlhsamJHOWhheTFvYjNOME1Rc3dDUVlEVlFRR0V3SlZVekNDCkFTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBSlEyZ3l3Nzc4dnV1c2FvcyswYitJSmcKcU9RbGNUeHZPbG5xVS9Da2pUTVhFbE41SlcvcXZ5WHVMaW1say9yZ002V3REVUFJNHpHb3RXb2IwOFllRTZ5SApYc2lMaS82MzhKbkdIV3R6cFB3WEFTdklxbmxIdUQ5UU94ZEpRMEZvWmpVSzdBMTFDWXltUi9tMWlQZ2N3U091Cmg0SVVndksyUnM3alNMR1hMeEZLOFVMM3o4RTJZcWxxemwrcExZdkdGRFZFVWFkcXdLMWQ4akhYTG1UTlBTNFEKZWVmZ3JJckVhTWp3RGx2RWtKdDR4MHVURWpwQm04alZXdUthN2VLQXJvWHlzWEJYNGs3ekpPZDg2UVBoRUM2ZQpoU2VjNzdnTUVpUHN3NTR0aFBiV2cvem1mOXBSKytmaVptYjZRbEJsTzdDTFNIbVd2UEZXU3dWUU9GZmVxRjhDCkF3RUFBYU5UTUZFd0hRWURWUjBPQkJZRUZFcFdFVmFncEVxWXQ2emN6ak5sZTFRR3p5a1VNQjhHQTFVZEl3UVkKTUJhQUZFcFdFVmFncEVxWXQ2emN6ak5sZTFRR3p5a1VNQThHQTFVZEV3RUIvd1FGTUFNQkFmOHdEUVlKS29aSQpodmNOQVFFTEJRQURnZ0VCQURRSmhLOS9tN0J2SW9Tb0JNdlppZWNqbTNReUw4SnZMV2IxMk9GbEhEVnpBYnBmCjYxZlhUOFJ2cFdkbGR6QkF6VE1vazVHYkxXL3o0TXBxK0JYZkZPSXp1UFhpdUdtMHdlL2hMb3ZiZEhlNmlOeWsKSFE5aUwxaGo1MjgvM0EyOHl0dGE3eFAwNS8vWDdxbkYrU2lKQXNCcmQrRVU1em0vcTk5eFdDMnkrWjY4MTA4YQo3K1ZaTDlHUjBUamUyWGRkSTJEU1J5VGwvOUZUZDRvVmxnNUx6MHorNFp1TjhkbDFQTm5BQ29QRFZJcTRleU8yCi9xVVZBUTl5Nm9PM2tialE1Qms5ZzNoSzBXdVRoekJDNTc3VVJEYlBVQ1ViSzhBMnozaVZ4ei83UWtudzJXM3kKWDhxK3Y1VlV0blFMQStqbE8rMm5EbCtkT29MeGo1UmZRdGI4MDI4PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+#  tls.key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2UUlCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktjd2dnU2pBZ0VBQW9JQkFRQ1VOb01zTysvTDdyckcKcUxQdEcvaUNZS2prSlhFOGJ6cFo2bFB3cEkwekZ4SlRlU1Z2NnI4bDdpNHBwWlA2NERPbHJRMUFDT014cUxWcQpHOVBHSGhPc2gxN0lpNHYrdC9DWnhoMXJjNlQ4RndFcnlLcDVSN2cvVURzWFNVTkJhR1kxQ3V3TmRRbU1wa2Y1CnRZajRITUVqcm9lQ0ZJTHl0a2JPNDBpeGx5OFJTdkZDOTgvQk5tS3BhczVmcVMyTHhoUTFSRkduYXNDdFhmSXgKMXk1a3pUMHVFSG5uNEt5S3hHakk4QTVieEpDYmVNZExreEk2UVp2STFWcmltdTNpZ0s2RjhyRndWK0pPOHlUbgpmT2tENFJBdW5vVW5uTys0REJJajdNT2VMWVQyMW9QODVuL2FVZnZuNG1abStrSlFaVHV3aTBoNWxyenhWa3NGClVEaFgzcWhmQWdNQkFBRUNnZ0VBQVozeW9tbm8vTldXN2hIckhKd2dndk9oQkJRd2Z4TkxsSzJNeXVSUXNnei8KWXkvQUs4OW8xSFlieE5LTW9jRU9iekZMSXJhMkc5V1dYUmorbjN1MmhUeFkyV0ZFWHJ3TkFQQjdZNis0VGhQRwpMSDhjOVFQR1M5S0pRb0RISGhDUWhPV2dtNmo2T0xHYnVXcTBtdGhkZHhFeFkwYnNBcy9nUitPTTZIc1l4VnlDCnN5ckxLT001a20yTVVCL3ZIRjVoTllHK3crQnhtZlR4L2NIaGlrVFM2Rm56ekZtUTJ6TFNvNlR3SlRVbll2b3gKSXE4amtKcFdBNEZrbGJnRy9XMWdQcDFoaUl5amxEamFjaFUrZGdHaWszVlhaTXJjaG1OMUxONzBUeGF5dXVZSApLbEZaeUh1WWRFSXBXaDMvMk1qRW9CdTNOanFZL3lkK0VObnJaVjJqZ1FLQmdRREZORmdQWDhrT2dQZFdhSkZXCkFXbXNWYUFYeG5yalJEc2pyZXhSeVRlSEhsUFNmWVdqQ2Y1b3hzRHYvYnFSNjl1TlhVK3Q3cENPVjY4bGxwQk0KaFV0SkdEeUc2dkhtRnRudFE5aGZPMFhFYVcyQ0lpbW1hU3MyT0RpV3MrallrWHZSc2Mva0RvMTFjbFNUeTlscQpNS2NKQWtHaHVSM1dMeTRvbmxkQzJDaU93UUtCZ1FEQVp1STY4ZkExSWZhYXovcGw3c3VNeXVRMzNhUEo3dGtSCmsxdmxnVkZERVRnZjk2YmVRNm5GMXFkKy9JdGtybFU0TDFRaGJ5eGJNYUZYb1FsTmEyWTFHS0cwWkdXVXkzVCsKdTc0Zld3THJiRzAzUDF5ZHQyN013K29zNWxQR3JXaEhlUmRKM1MwWWw3U2hkRlY5UWtDOGtqMEJXemJ3MzFkUgpMc1BoV0t3Zkh3S0JnRlF5UmdyQ1hhaEluZEdSc2NPanRNZDBnM2JETWtLSUppdlVuUnBLSytBUHJjQW9BWCtiCnk3aFdhNWZMbi9XZldzemZjeDZTeGJ0UWFxSkV4M1UwVC9GMFhKdEtBbCszai9JQ1RvWlNXelpCd1JTWG0yckcKYWtHcS9WWXltQTZuQnROLzlIK3RTdTVERXlOTEhKZC9FRUlEYVp3djJqSlJVSWJkRytxWk9hL0JBb0dCQUt5QwpVdXQ1QytBSDhMMkVKc1lJWXRkOC96MGI3QVJkdEtFdWwrSGluZ0xkU0k1WkZYUUtCUW5PMmVWZytIYXdYTmFBCmtSVmRRYzhPWTlSWEhpa2RWOG5acVBzK1hWb1pSbkF6MDFiMzJsbE5vV3M4MDRUUitIVitYOVFjUEJkU1djSmoKeno2Nklmbi80OFF6czRjWXhVU09ka1ptQzQvVElNNDRlUWJ1NDMwUEFvR0FUM3RUbzBEQ2ZUT1phTlk2aFNvZwp1dXRYUTkxRGg1K2pVbHhwLzVGTnJEZC9VaThZOFlERTFkcDRxMUZ1R042TlozTk1Oa3pBVGRzRUtjOTVLR01SClAvSm1malBUOFVHT2dkUEF6Ty9neHUrczFrTW9vVjJzT3VzM0pqZExyQjJJTnpiRlhkZzltcTc1OVdTcjUyT1MKeVh1eW1IaHpWQkFOc0FBUHlvRUk3UE09Ci0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K
+#type: kubernetes.io/tls
+---
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+  namespace: keycloak
+spec:
+  db:
+    host: postgres-db
+    passwordSecret:
+      key: password
+      name: keycloak-db-secret
+    usernameSecret:
+      key: username
+      name: keycloak-db-secret
+    vendor: postgres
+  hostname:
+    hostname: $KEYCLOAK_HOST_URL
+  http:
+    tlsSecret: example-tls-secret
+  instances: 1
+  proxy:
+    headers: xforwarded
