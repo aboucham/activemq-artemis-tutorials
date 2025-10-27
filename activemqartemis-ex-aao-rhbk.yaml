@@ -1,0 +1,97 @@
+# oc create secret -n amq generic keycloak-jaas-config --from-file=login.config --from-file=_keycloak-bearer-token.json --from-file=_keycloak-js-client.json --from-file=_keycloak-direct-access.json
+# oc extract secret/router-certs-default -n openshift-ingress --confirm
+# keytool -import -noprompt -file tls.crt -alias "*.apps.com" -keystore truststore.jks -storepass password
+# oc create secret -n amq generic keycloak-truststore --from-file=truststore.jks
+apiVersion: broker.amq.io/v1beta1
+kind: ActiveMQArtemis
+metadata:
+  name: ex-aao
+  # Namespace amq for AMQ Broker
+  namespace: amq
+spec:
+  resourceTemplates:
+  - selector:
+     kind: "StatefulSet"
+    patch:
+     kind: "StatefulSet"
+     spec:
+      template:
+       spec:
+        initContainers:
+        - name: "ex-aao-container-init"
+          args:
+          -  '-c'
+          -  '/opt/amq/bin/launch.sh && /opt/amq-broker/script/default.sh; echo "Empty management.xml";echo "<management-context xmlns=\"http://activemq.apache.org/schema\" />" > /amq/init/config/amq-broker/etc/management.xml'
+  #  Enable RBAC configuration - restrict access to Mbeans using RBAC
+  env:
+#  - name: JAVA_ARGS_APPEND
+# org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal
+#    value: "-Dhawtio.role=-Djavax.management.builder.initial=org.apache.activemq.artemis.core.server.management.ArtemisRbacMBeanServerBuilder"
+  - name: JAVA_ARGS_APPEND
+    value: -Dsecret.mount=/amq/extra/secrets/keycloak-jaas-config -Djavax.net.ssl.trustStore=/amq/extra/secrets/keycloak-truststore/truststore.jks
+      -Djavax.net.ssl.trustStorePassword=password -Djavax.net.ssl.trustStoreType=jks
+      -Dhawtio.rolePrincipalClasses=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal
+      -Dhawtio.keycloakEnabled=true -Dhawtio.keycloakClientConfig=/amq/extra/secrets/keycloak-jaas-config/_keycloak-js-client.json
+      -Dhawtio.authenticationEnabled=true -Dhawtio.realm=console -Dhawtio.roles=* -Djavax.management.builder.initial=org.apache.activemq.artemis.core.server.management.ArtemisRbacMBeanServerBuilder
+  # brokerProperties: Create samplequeue
+  # brokerProperties: grants a admin role view and edit permission to an activemq.management address.
+  # The asterisk (*) in the operation position grants access to all operations.
+  # brokerProperties: the number sign (#) after the mops prefix grants the amq role view and edit permissions to all MBeans.
+  brokerProperties:
+    - >-
+      addressConfigurations.samplequeue.queueConfigs.samplequeue.routingType=ANYCAST
+### Section for management hawtioRoles RBAC Auhorisation for (amq-console)
+    - securityRoles."mops.address.activemq.management.*".admin.view=true
+    - securityRoles."mops.address.activemq.management.*".admin.edit=true
+    - securityRoles."mops.address.activemq.management.*".viewer.view=true
+    - securityRoles."mops.#".admin.view=true
+    - securityRoles."mops.#".admin.edit=true
+    - securityRoles."mops.#".viewer.view=true
+### Section for SecuritySettings for the broker (amq-broker)
+    - securityRoles.#.admin.createAddress=true
+    - securityRoles.#.admin.deleteAddress=true
+    - securityRoles.#.admin.createDurableQueue=true
+    - securityRoles.#.admin.deleteDurableQueue=true
+    - securityRoles.#.admin.createNonDurableQueue=true
+    - securityRoles.#.admin.deleteNonDurableQueue=true
+    - securityRoles.#.admin.send=true
+    - securityRoles.#.sender.send=true
+    - securityRoles.#.admin.consume=true
+    - securityRoles.#.consumer.consume=true
+    - securityRoles.#.admin.browse=true
+    - securityRoles."activemq.management.#".admin.createNonDurableQueue=true
+    - securityRoles."activemq.management.#".admin.createAddress=true
+    - securityRoles."activemq.management.#".admin.consume=true
+    - securityRoles."activemq.management.#".admin.manage=true
+    - securityRoles."activemq.management.#".admin.send=true
+  version: 7.13.1
+  deploymentPlan:
+    extraMounts:
+      secrets:
+      - keycloak-jaas-config
+      - keycloak-truststore
+    image: placeholder
+    size: 1
+    # Monitoring Properties
+    jolokiaAgentEnabled: true
+    managementRBACEnabled: true
+  # Management Console Properties
+  console:
+    expose: true
+    sslEnabled: true
+    # sslSecret mytlssecret MUST be created before
+    sslSecret: mytlssecret
+  adminUser: admin
+  adminPassword: admin
+  acceptors:
+    - name: myacceptor
+      protocols: amqp
+      port: 5673
+      expose: true
+      connectionsAllowed: 100
+    - name: all
+      protocols: all
+      port: 61616
+      sslEnabled: false
+      #sslSecret: mytlssecret
+      expose: true
