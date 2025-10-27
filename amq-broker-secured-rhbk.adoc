@@ -107,6 +107,97 @@ EOF
 
 === Deploy AMQ Broker Secured by KeyCloak 26
 
+1- To validate the RHBK server’s certificate by the AMQ Broker. The certificates of these remote server’s or the CA that signed these certificates must be put in a truststore and imported in a secret `keycloak-truststore`:
+
+[source, bash,indent=0]
+----
+rm tls.crt
+oc extract secret/example-tls-secret -n keycloak --confirm
+oc create secret generic keycloak-truststore -n amq --from-file=tls.crt
+----
+
+2- Set up the right URL of the RHBK exposed on OpenShift in the keycloack json files:
+
+[source, bash,indent=0]
+----
+export KEYCLOAK_URL=keycloak-sso.apps.com
+cat <<EOF | envsubst > _keycloak-direct-access.json
+{
+  "realm": "amq-broker-realm",
+  "auth-server-url": "https://\$KEYCLOAK_URL",
+  "ssl-required": "all",
+  "credentials": {
+    "secret": "amq-broker-secret-value"
+  },
+  "resource": "amq-broker",
+  "use-resource-role-mappings": true,
+  "principal-attribute": "preferred_username",
+  "verify-token-audience": true,
+  "enable-basic-auth": true,
+  "confidential-port": 0
+}
+EOF
+
+cat <<EOF | envsubst > _keycloak-bearer-token.json
+{
+  "realm": "amq-broker-realm",
+  "auth-server-url": "https://\$KEYCLOAK_URL",
+  "ssl-required": "all",
+  "resource": "amq-console",
+  "public-client": true,
+  "use-resource-role-mappings": true,
+  "principal-attribute": "preferred_username",
+  "verify-token-audience": false,
+  "enable-basic-auth": true,
+  "confidential-port": 0
+}
+EOF
+
+cat <<EOF | envsubst > _keycloak-js-client.json
+{
+  "realm": "amq-broker-realm",
+  "clientId": "amq-console",
+  "url": "https://\$KEYCLOAK_URL"
+}
+EOF
+
+cat <<"EOF" > login.config
+console {
+    // ensure the operator can connect to the broker by referencing the existing properties config
+    org.apache.activemq.artemis.spi.core.security.jaas.PropertiesLoginModule sufficient
+        org.apache.activemq.jaas.properties.user="artemis-users.properties"
+        org.apache.activemq.jaas.properties.role="artemis-roles.properties"
+        baseDir="/home/jboss/amq-broker/etc";
+
+   org.keycloak.adapters.jaas.BearerTokenLoginModule sufficient
+        keycloak-config-file="${secret.mount}/_keycloak-bearer-token.json"
+        role-principal-class=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal;
+
+    org.apache.activemq.artemis.spi.core.security.jaas.PrincipalConversionLoginModule required
+       principalClassList=org.keycloak.KeycloakPrincipal;
+};
+activemq {
+    org.keycloak.adapters.jaas.BearerTokenLoginModule sufficient
+        keycloak-config-file="${secret.mount}/_keycloak-bearer-token.json"
+        role-principal-class=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal;
+
+    org.keycloak.adapters.jaas.DirectAccessGrantsLoginModule sufficient
+        keycloak-config-file="${secret.mount}/_keycloak-direct-access.json"
+        role-principal-class=org.apache.activemq.artemis.spi.core.security.jaas.RolePrincipal;
+
+    org.apache.activemq.artemis.spi.core.security.jaas.PrincipalConversionLoginModule required
+       principalClassList=org.keycloak.KeycloakPrincipal;
+};
+EOF
+----
+
+3- Use the oc create secret command to create a secret `keycloak-jaas-config` from the text file that you created with the new login module configuration. If the login module configuration includes a properties login module, also include the associated users and roles files in the secret. For example:
+
+[source, bash,indent=0]
+----
+oc create secret -n amq generic keycloak-jaas-config --from-file=login.config --from-file=_keycloak-bearer-token.json --from-file=_keycloak-js-client.json --from-file=_keycloak-direct-access.json
+----
+
 [source, bash]
 ----
 oc new-project amq
