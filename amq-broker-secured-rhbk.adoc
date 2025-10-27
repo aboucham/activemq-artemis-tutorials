@@ -1,0 +1,124 @@
+= Deploy and Secure Your AMQ Broker with KeyCloak 26: A Step-by-Step Guide
+
+:toc: left
+:toclevels: 3
+:sectnums:
+
+== Environment Setup
+
+ - Red Hat Integration - AMQ Broker for RHEL 9 (Multiarch) : 7.13.2 provided by Red Hat
+
+== Deploy and Configure KeyCloak 26 for AMQ Broker
+
+This section covers setting up *KeyCloak* as an *OpenID Connect (OIDC)* provider.
+
+=== Deploy KeyCloak 26
+
+Create a new project and deploy the KeyCloak Operator.
+
+[source, bash]
+----
+oc new-project keycloak
+oc project keycloak
+----
+
+Deploy KeyCloak Subscription:
+
+[source, bash]
+----
+oc apply -f - <<EOF
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  labels:
+    operators.coreos.com/rhbk-operator.keycloak: ''
+  name: rhbk-operator
+  namespace: keycloak
+spec:
+  channel: stable-v26.2
+  installPlanApproval: Automatic
+  name: rhbk-operator
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: rhbk-operator.v26.2.9-opr.1
+EOF
+----
+
+Deploy Keycloak 26 Instance:
+
+Create secret `example-tls-secret` required for the https exposed by the KeyCloak instance.
+The `KEYCLOAK_HOST_URL` must be defined in the `CN=` in the following:
+
+[source, bash]
+----
+openssl req -subj '/CN=keycloak-host.apps.abouchama-ai.emea.aws.cee.support/O=Keycloak-host/C=US' -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out certificate.pem
+oc create secret tls example-tls-secret --cert certificate.pem --key key.pem
+----
+
+
+[source, bash]
+----
+export KEYCLOAK_HOST_URL=keycloak-host.apps.abouchama-ai.emea.aws.cee.support
+curl -sL https://raw.githubusercontent.com/aboucham/strimzi-kafka-tutorial/refs/heads/main/keycloak/keycloak-install.yaml | \
+envsubst | \
+oc apply -f -
+----
+
+Retrieve the initial `admin` credentials:
+
+[source, bash]
+----
+kubectl get secret -n keycloak example-kc-initial-admin -o jsonpath='{.data.username}' | base64 --decode
+kubectl get secret -n keycloak example-kc-initial-admin -o jsonpath='{.data.password}' | base64 --decode
+----
+
+=== KeyCloak Configuration Steps
+
+[source, bash]
+----
+oc project keycloak
+oc apply -f https://raw.githubusercontent.com/aboucham/apicurio-registry/refs/heads/main/keycloak/apicurio-registry-KeycloakRealmImport.yaml
+----
+
+== Deploy AMQ Broker
+
+=== Install AMQ Broker Operator
+
+First, install the necessary Red Hat Operators for AMQ Broker into the `openshift-operators` namespace:
+
+[source, bash]
+----
+oc apply -f - <<EOF
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  labels:
+    operators.coreos.com/amq-broker-rhel9.openshift-operators: ""
+  name: amq-broker-rhel9
+  namespace: openshift-operators
+spec:
+  channel: 7.13.x
+  installPlanApproval: Automatic
+  name: amq-broker-rhel9
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: amq-broker-operator.v7.13.1-opr-1-0.1756381365.p
+EOF
+----
+
+=== Deploy AMQ Broker Secured by KeyCloak 26
+
+[source, bash]
+----
+oc new-project amq
+oc project amq
+
+export APPLICATION_NAME="registry"
+export KEYCLOAK_INGRESS_URL="keycloak-host.apps.aboucham.emea.aws.cee.support/realms/registry"
+export APP_INGRESS_URL="registry-app.apps.aboucham.emea.aws.cee.support"
+export UI_INGRESS_URL="registry-ui.apps.aboucham.emea.aws.cee.support"
+
+curl -sL https://raw.githubusercontent.com/aboucham/apicurio-registry/refs/heads/main/ApicurioRegistry3-Keycloak.yaml | \
+envsubst | \
+oc apply -f -
+----
