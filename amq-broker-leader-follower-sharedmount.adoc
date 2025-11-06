@@ -189,7 +189,6 @@ spec:
     peer.group: peer-broker
   type: ClusterIP
   sessionAffinity: None
-  publishNotReadyAddresses: true
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
