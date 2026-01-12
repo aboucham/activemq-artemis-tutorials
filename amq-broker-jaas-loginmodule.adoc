@@ -87,5 +87,5 @@ oc create secret generic custom-jaas-config --from-file=login.config --from-file
 
 [source, bash]
 ----
-oc apply https://raw.githubusercontent.com/aboucham/activemq-artemis-tutorials/refs/heads/main/broker-jaas-loginmodule.yaml
+oc apply -f https://raw.githubusercontent.com/aboucham/activemq-artemis-tutorials/refs/heads/main/broker-jaas-loginmodule.yaml
 ----
