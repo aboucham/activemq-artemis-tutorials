@@ -109,3 +109,20 @@ When running the consumer as the `batch` user, you should see a security excepti
 ----
 javax.jms.JMSSecurityException: AMQ229213: User: batch does not have permission='CONSUME' for queue samplequeue on address samplequeue
 ----
+
+== 7. Validation via AMQ Broker Web Console
+
+=== Admin User Login
+1. Log in to the Console using the `admin` credentials.
+2. Navigate to the **Artemis** tab.
+3. Observe that you have full access to all **MBeans**. You can view attributes and execute operations (Edit permissions).
+
+=== Viewer User (Batch) Login
+1. Log in to the Console using the `batch` credentials.
+2. Navigate to the **Artemis** tab.
+3. **Observation:** While the user can browse the tree, the JMX MBeans will be decorated with a **padlock icon**.
+
+[IMPORTANT]
+====
+The padlock indicates that the `batch` user has **View-Only** rights. This user is restricted from executing management operations because they lack the required management roles defined in the JAAS configuration.
+====
