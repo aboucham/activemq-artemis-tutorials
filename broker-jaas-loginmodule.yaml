@@ -1,0 +1,109 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: custom-logging-config
+data:
+  logging.properties: |2
+    appender.stdout.name = STDOUT
+    appender.stdout.type = Console
+    rootLogger = info, STDOUT
+    logger.activemq.name=org.apache.activemq.artemis.core.config.impl.ConfigurationImpl
+    logger.activemq.level=TRACE
+    logger.jaas.name=org.apache.activemq.artemis.spi.core.security.jaas
+    logger.jaas.level=TRACE
+    logger.rest.name=org.apache.activemq.artemis.core
+    logger.rest.level=ERROR
+---
+apiVersion: broker.amq.io/v1beta1
+kind: ActiveMQArtemis
+metadata:
+ name: broker-prod
+spec:
+  env:
+  - name: JAVA_ARGS_APPEND
+    value: "-Dhawtio.roles=* -Djavax.management.builder.initial=org.apache.activemq.artemis.core.server.management.ArtemisRbacMBeanServerBuilder"
+  resourceTemplates:
+  - selector:
+      kind: "StatefulSet"
+    patch:
+      kind: "StatefulSet"
+      spec:
+      template:
+       spec:
+        initContainers:
+        - name: "broker-prod-container-init"
+          args:
+          -  '-c'
+          -  '/opt/amq/bin/launch.sh && /opt/amq-broker/script/default.sh; echo "Empty management.xml";echo "<management-context xmlns=\"http://activemq.apache.org/schema\" />" > /amq/init/config/amq-broker/etc/management.xml'
+  acceptors:
+    - expose: true
+      name: all
+      port: 61616
+      protocols: all
+      sslEnabled: false
+    - expose: true
+      name: amqp
+      port: 5672
+      protocols: amqp
+      sslEnabled: false
+  adminPassword: admin
+  adminUser: admin
+  brokerProperties:
+## Test ::: https://github.com/apache/activemq-artemis/blob/main/artemis-server/src/test/java/org/apache/activemq/artemis/core/config/impl/ConfigurationImplTest.java#L1621
+    - maxDiskUsage=85
+    - clusterConfigurations.my-cluster.producerWindowSize=-1
+    - 'addressSettings.#.redeliveryMultiplier=5'
+    - criticalAnalyzer=true
+    - criticalAnalyzerTimeout=6000
+    - criticalAnalyzerCheckPeriod=-1 
+    - criticalAnalyzerPolicy=LOG
+### Create address:
+    - >-
+      addressConfigurations.samplequeue.queueConfigs.samplequeue.routingType=ANYCAST
+### Section for management hawtioRoles RBAC Auhorisation for (amq-console)
+### The correct format of the match addresses for management operations is:
+### mops.<resource type>.<resource name>.<operation>
+    - securityRoles."mops.address.*.getAddressNames".batchRole.view=true
+    - securityRoles."mops.address.batch.stream.*.getMessageCount".batchRole.view=true
+    - securityRoles."mops.address.activemq.management.*".admin.view=true
+    - securityRoles."mops.address.activemq.management.*".admin.edit=true
+    - securityRoles."mops.#".admin.view=true
+    - securityRoles."mops.#".admin.edit=true
+    - securityRoles."mops.#".viewer.view=true
+    - securityRoles."mops.queue.*IR*.*".consoleTest.view=true
+    - securityRoles."mops.queue.*(IR|IC)*.*".consoleTest.view=true
+### Section for SecuritySettings for the broker (amq-broker)
+    - securityRoles.#.admin.createAddress=true
+    - securityRoles.#.admin.deleteAddress=true
+    - securityRoles.#.admin.createDurableQueue=true
+    - securityRoles.#.admin.deleteDurableQueue=true
+    - securityRoles.#.admin.createNonDurableQueue=true
+    - securityRoles.#.admin.deleteNonDurableQueue=true
+    - securityRoles.#.admin.send=true
+    - securityRoles.#.sender.send=true
+    - securityRoles.#.admin.consume=true
+    - securityRoles.#.consumer.consume=true
+    - securityRoles.#.admin.browse=true
+    - securityRoles."activemq.management.#".admin.createNonDurableQueue=true
+    - securityRoles."activemq.management.#".admin.createAddress=true
+    - securityRoles."activemq.management.#".admin.consume=true
+    - securityRoles."activemq.management.#".admin.manage=true
+    - securityRoles."activemq.management.#".admin.send=true
+  console:
+    expose: true
+  deploymentPlan:
+    extraMounts:
+      configMaps:
+        - custom-logging-config
+      secrets:
+        - custom-jaas-config
+    size: 1
+    persistenceEnabled: true
+    requireLogin: false
+    messageMigration: true
+    managementRBACEnabled: true
+    journalType: aio
+    enableMetricsPlugin: true
+    jolokiaAgentEnabled: true
+    clustered: true
+  version: '7.13'
