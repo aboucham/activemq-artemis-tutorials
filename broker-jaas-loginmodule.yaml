@@ -17,24 +17,8 @@ data:
 apiVersion: broker.amq.io/v1beta1
 kind: ActiveMQArtemis
 metadata:
- name: broker-prod
+  name: broker-prod
 spec:
-  env:
-  - name: JAVA_ARGS_APPEND
-    value: "-Dhawtio.roles=* -Djavax.management.builder.initial=org.apache.activemq.artemis.core.server.management.ArtemisRbacMBeanServerBuilder"
-  resourceTemplates:
-  - selector:
-      kind: "StatefulSet"
-    patch:
-      kind: "StatefulSet"
-      spec:
-      template:
-       spec:
-        initContainers:
-        - name: "broker-prod-container-init"
-          args:
-          -  '-c'
-          -  '/opt/amq/bin/launch.sh && /opt/amq-broker/script/default.sh; echo "Empty management.xml";echo "<management-context xmlns=\"http://activemq.apache.org/schema\" />" > /amq/init/config/amq-broker/etc/management.xml'
   acceptors:
     - expose: true
       name: all
@@ -47,22 +31,28 @@ spec:
       protocols: amqp
       sslEnabled: false
   adminPassword: admin
-  adminUser: admin
+  resourceTemplates:
+    - patch:
+        kind: StatefulSet
+        spec:
+          template:
+            spec:
+              initContainers:
+                - args:
+                    - '-c'
+                    - '/opt/amq/bin/launch.sh && /opt/amq-broker/script/default.sh; echo "Empty management.xml";echo "<management-context xmlns=\"http://activemq.apache.org/schema\" />" > /amq/init/config/amq-broker/etc/management.xml'
+                  name: broker-prod-container-init
+      selector:
+        kind: StatefulSet
   brokerProperties:
-## Test ::: https://github.com/apache/activemq-artemis/blob/main/artemis-server/src/test/java/org/apache/activemq/artemis/core/config/impl/ConfigurationImplTest.java#L1621
     - maxDiskUsage=85
     - clusterConfigurations.my-cluster.producerWindowSize=-1
-    - 'addressSettings.#.redeliveryMultiplier=5'
+    - addressSettings.#.redeliveryMultiplier=5
     - criticalAnalyzer=true
     - criticalAnalyzerTimeout=6000
-    - criticalAnalyzerCheckPeriod=-1 
+    - criticalAnalyzerCheckPeriod=-1
     - criticalAnalyzerPolicy=LOG
-### Create address:
-    - >-
-      addressConfigurations.samplequeue.queueConfigs.samplequeue.routingType=ANYCAST
-### Section for management hawtioRoles RBAC Auhorisation for (amq-console)
-### The correct format of the match addresses for management operations is:
-### mops.<resource type>.<resource name>.<operation>
+    - addressConfigurations.samplequeue.queueConfigs.samplequeue.routingType=ANYCAST
     - securityRoles."mops.address.*.getAddressNames".batchRole.view=true
     - securityRoles."mops.address.batch.stream.*.getMessageCount".batchRole.view=true
     - securityRoles."mops.address.activemq.management.*".admin.view=true
@@ -72,7 +62,6 @@ spec:
     - securityRoles."mops.#".viewer.view=true
     - securityRoles."mops.queue.*IR*.*".consoleTest.view=true
     - securityRoles."mops.queue.*(IR|IC)*.*".consoleTest.view=true
-### Section for SecuritySettings for the broker (amq-broker)
     - securityRoles.#.admin.createAddress=true
     - securityRoles.#.admin.deleteAddress=true
     - securityRoles.#.admin.createDurableQueue=true
@@ -89,21 +78,25 @@ spec:
     - securityRoles."activemq.management.#".admin.consume=true
     - securityRoles."activemq.management.#".admin.manage=true
     - securityRoles."activemq.management.#".admin.send=true
-  console:
-    expose: true
+  env:
+    - name: JAVA_ARGS_APPEND
+      value: '-Dhawtio.roles=* -Djavax.management.builder.initial=org.apache.activemq.artemis.core.server.management.ArtemisRbacMBeanServerBuilder'
   deploymentPlan:
+    size: 1
+    persistenceEnabled: true
+    requireLogin: false
+    messageMigration: true
     extraMounts:
       configMaps:
         - custom-logging-config
       secrets:
         - custom-jaas-config
-    size: 1
-    persistenceEnabled: true
-    requireLogin: false
-    messageMigration: true
     managementRBACEnabled: true
     journalType: aio
     enableMetricsPlugin: true
     jolokiaAgentEnabled: true
     clustered: true
+  console:
+    expose: true
   version: '7.13'
+  adminUser: admin
