@@ -28,9 +28,7 @@ EOF
 ----
 cat <<"EOF" > new-users.properties
 ruben=ruben
-anne=anne
 rick=rick
-bob=bob
 batch=batch
 EOF
 ----
@@ -39,7 +37,7 @@ EOF
 ----
 cat <<"EOF" > new-roles.properties
 admin=ruben, rick
-batchRole=batch
+viewer=batch
 EOF
 ----
 
