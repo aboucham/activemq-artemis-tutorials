@@ -87,3 +87,34 @@ oc create secret generic custom-jaas-config --from-file=login.config --from-file
 ----
 oc apply -f https://raw.githubusercontent.com/aboucham/activemq-artemis-tutorials/refs/heads/main/broker-jaas-loginmodule.yaml
 ----
+
+
+[source, bash]
+----
+export POD=broker-prod-ss-0
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://samplequeue --user admin --password admin
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis consumer --acceptor all --destination queue://samplequeue --user admin --password admin
+----
+
+[source, bash]
+----
+export POD=broker-prod-ss-0
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://samplequeue --user batch --password batch
+oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis consumer --acceptor all --destination queue://samplequeue --user batch --password batch
+----
+
+Expected output:
+
+[source, bash]
+----
+Defaulted container "broker-prod-container" out of: broker-prod-container, broker-prod-container-init (init)
+NOTE: Picked up JDK_JAVA_OPTIONS: -Dbroker.properties=/amq/extra/secrets/broker-prod-props/broker.properties
+Setting mirrorIgnorePageTransactions=false
+Setting mirrorAckManagerMaxPageAttempts = 2
+Setting mirrorAckManagerMinQueueAttempts = 5
+Setting mirrorAckManagerRetryDelay = 100
+Connection brokerURL = tcp://broker-prod-ss-0.broker-prod-hdls-svc.amq.svc.cluster.local:61616
+Consumer:: filter = null
+Consumer ActiveMQQueue[samplequeue], thread=0 wait 3000ms until 1000 messages are consumed
+javax.jms.JMSSecurityException: AMQ229213: User: batch does not have permission='CONSUME' for queue samplequeue on address samplequeue
+----
