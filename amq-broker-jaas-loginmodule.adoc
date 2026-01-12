@@ -1,24 +1,25 @@
-= Deploying AMQ Broker secured with JAAS Properties LoginModule:
+= Deploying AMQ Broker Secured with JAAS Properties LoginModule
 
-== Chapters:
+This tutorial provides a step-by-step guide to securing an Red Hat Integration - AMQ Broker deployment using the **JAAS Properties LoginModule**. This method allows you to manage authentication and authorization through property files stored as Kubernetes Secrets.
 
-Environment Setup:
+== Environment Setup
+* **Model:** Red Hat Integration - AMQ Broker for RHEL 8 (Multiarch)
+* **Version:** 7.13.3-opr-1
+* **Prerequisites:** AMQ Broker Operator must be installed via OperatorHub.
 
-- Red Hat Integration - AMQ Broker for RHEL 8 (Multiarch) : 7.13.3-opr-1+0.1767807057.p provided by Red Hat
+== 1. Prepare the Configuration Workspace
+First, create a local temporary directory to manage your configuration files before uploading them to the cluster.
 
-Prerequisites:
-
-- Install AMQ Broker Operator:  from OperatorHub
-
-=== 1. Setting Up Initial Environment
-
-[source, bash]
+[source,bash]
 ----
 mkdir tmp-jaas
 cd tmp-jaas
 ----
 
-[source, bash]
+== 2. Define the JAAS Login Configuration
+Create the `login.config` file. This defines how the broker validates credentials. We use two modules: one for custom application users and one for default system users.
+
+[source,bash]
 ----
 cat <<"EOF" > login.config
 activemq {
@@ -36,7 +37,16 @@ activemq {
 EOF
 ----
 
-[source, bash]
+[TIP]
+====
+Setting the flag to `sufficient` ensures that if a user is found in the first module, authentication succeeds immediately. If not, it falls back to the second module.
+====
+
+== 3. Configure Users and Roles
+Define your security identities in the following property files.
+
+.Create Users (username=password)
+[source,bash]
 ----
 cat <<"EOF" > new-users.properties
 ruben=ruben
@@ -45,7 +55,8 @@ batch=batch
 EOF
 ----
 
-[source, bash]
+.Create Roles (role=user_list)
+[source,bash]
 ----
 cat <<"EOF" > new-roles.properties
 admin=ruben, rick
@@ -53,43 +64,48 @@ viewer=batch
 EOF
 ----
 
-[source, bash]
+== 4. Create the Kubernetes Secret
+Store these configuration files in an OpenShift secret. This secret will be mounted by the Broker Pods.
+
+[source,bash]
 ----
-oc create secret generic custom-jaas-config --from-file=login.config --from-file=new-users.properties --from-file=new-roles.properties
+oc create secret generic custom-jaas-config \
+  --from-file=login.config \
+  --from-file=new-users.properties \
+  --from-file=new-roles.properties
 ----
 
-[source, bash]
+== 5. Deploy the AMQ Broker
+Apply the Custom Resource to trigger the deployment via the Operator.
+
+[source,bash]
 ----
 oc apply -f https://raw.githubusercontent.com/aboucham/activemq-artemis-tutorials/refs/heads/main/broker-jaas-loginmodule.yaml
 ----
 
+== 6. Validation and Testing
+Verify that the security policies are correctly enforced by testing different user roles.
 
-[source, bash]
+.Testing Admin Access (Success Expected)
+[source,bash]
 ----
 export POD=broker-prod-ss-0
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://samplequeue --user admin --password admin
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis consumer --acceptor all --destination queue://samplequeue --user admin --password admin
 ----
 
-[source, bash]
+.Testing Viewer Access (Failure Expected)
+The `batch` user belongs to the `viewer` role and should not have permissions to consume messages.
+[source,bash]
 ----
-export POD=broker-prod-ss-0
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://samplequeue --user batch --password batch
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis consumer --acceptor all --destination queue://samplequeue --user batch --password batch
 ----
 
-Expected output:
+=== Expected Output for Viewer
+When running the consumer as the `batch` user, you should see a security exception indicating that the JAAS module is correctly blocking unauthorized access:
 
-[source, bash]
+[source,text]
 ----
-Defaulted container "broker-prod-container" out of: broker-prod-container, broker-prod-container-init (init)
-NOTE: Picked up JDK_JAVA_OPTIONS: -Dbroker.properties=/amq/extra/secrets/broker-prod-props/broker.properties
-Setting mirrorIgnorePageTransactions=false
-Setting mirrorAckManagerMaxPageAttempts = 2
-Setting mirrorAckManagerMinQueueAttempts = 5
-Setting mirrorAckManagerRetryDelay = 100
-Connection brokerURL = tcp://broker-prod-ss-0.broker-prod-hdls-svc.amq.svc.cluster.local:61616
-Consumer:: filter = null
-Consumer ActiveMQQueue[samplequeue], thread=0 wait 3000ms until 1000 messages are consumed
 javax.jms.JMSSecurityException: AMQ229213: User: batch does not have permission='CONSUME' for queue samplequeue on address samplequeue
 ----
