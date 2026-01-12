@@ -1,4 +1,16 @@
-How to deploy AMQ Broker secured with JAAS Properties LoginModule:
+= Deploying AMQ Broker secured with JAAS Properties LoginModule:
+
+== Chapters:
+
+Environment Setup:
+
+- Red Hat Integration - AMQ Broker for RHEL 8 (Multiarch) : 7.13.3-opr-1+0.1767807057.p provided by Red Hat
+
+Prerequisites:
+
+- Install AMQ Broker Operator:  from OperatorHub
+
+=== 1. Setting Up Initial Environment
 
 [source, bash]
 ----
@@ -39,43 +51,6 @@ cat <<"EOF" > new-roles.properties
 admin=ruben, rick
 viewer=batch
 EOF
-----
-
-[source, bash]
-----
-cat <<"EOF" > securityroles.properties
-securityRoles.#.admin.createAddress=true
-securityRoles.#.admin.deleteAddress=true
-securityRoles.#.admin.createDurableQueue=true
-securityRoles.#.admin.deleteDurableQueue=true
-securityRoles.#.admin.createNonDurableQueue=true
-securityRoles.#.admin.deleteNonDurableQueue=true
-securityRoles.#.admin.send=true
-securityRoles.#.batchRole.send=true
-securityRoles.#.admin.consume=true
-securityRoles.#.batchRole.consume=true
-securityRoles.#.admin.browse=true
-securityRoles."activemq.management.#".admin.createNonDurableQueue=true
-securityRoles."activemq.management.#".admin.createAddress=true
-securityRoles."activemq.management.#".admin.consume=true
-securityRoles."activemq.management.#".admin.manage=true
-securityRoles."activemq.management.#".admin.send=true
-EOF
-----
-
-[source, bash]
-----
-oc create secret generic securityroles-settings-bp --from-file=securityroles.properties
-----
-
-[source, yaml]
-----
-  deploymentPlan:
-    extraMounts:
-      configMaps:
-        - custom-logging-config
-      secrets:
-        - securityroles-settings-bp
 ----
 
 [source, bash]
