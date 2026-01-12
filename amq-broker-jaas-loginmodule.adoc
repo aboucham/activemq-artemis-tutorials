@@ -95,7 +95,7 @@ oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis consumer --acceptor all --
 ----
 
 .Testing Viewer Access (Failure Expected)
-The `batch` user belongs to the `viewer` role and should not have permissions to consume messages.
+The `batch` user belongs to the `send` role (`- securityRoles.#.viewer.send=true`) and should not have permissions to consume messages.
 [source,bash]
 ----
 oc exec -i $POD -- /home/jboss/amq-broker/bin/artemis producer --acceptor all --destination queue://samplequeue --user batch --password batch
