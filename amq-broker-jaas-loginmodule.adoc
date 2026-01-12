@@ -1,8 +1,14 @@
 How to deploy AMQ Broker secured with JAAS Properties LoginModule:
 
+[source, bash]
+----
 mkdir tmp-jaas
 cd tmp-jaas
- cat <<"EOF" > login.config
+----
+
+[source, bash]
+----
+cat <<"EOF" > login.config
 activemq {
    org.apache.activemq.artemis.spi.core.security.jaas.PropertiesLoginModule sufficient
       reload=true
@@ -15,7 +21,11 @@ activemq {
       org.apache.activemq.jaas.properties.role="artemis-roles.properties"
       baseDir="/home/jboss/amq-broker/etc";
 };
-EOF 
+EOF
+----
+
+[source, bash]
+----
 cat <<"EOF" > new-users.properties
 ruben=ruben
 anne=anne
@@ -23,13 +33,18 @@ rick=rick
 bob=bob
 batch=batch
 EOF
+----
 
+[source, bash]
+----
 cat <<"EOF" > new-roles.properties
 admin=ruben, rick
 batchRole=batch
 EOF
+----
 
-
+[source, bash]
+----
 cat <<"EOF" > securityroles.properties
 securityRoles.#.admin.createAddress=true
 securityRoles.#.admin.deleteAddress=true
@@ -48,14 +63,29 @@ securityRoles."activemq.management.#".admin.consume=true
 securityRoles."activemq.management.#".admin.manage=true
 securityRoles."activemq.management.#".admin.send=true
 EOF
+----
 
+[source, bash]
+----
 oc create secret generic securityroles-settings-bp --from-file=securityroles.properties
+----
 
+[source, yaml]
+----
   deploymentPlan:
     extraMounts:
       configMaps:
         - custom-logging-config
       secrets:
         - securityroles-settings-bp
+----
 
+[source, bash]
+----
 oc create secret generic custom-jaas-config --from-file=login.config --from-file=new-users.properties --from-file=new-roles.properties
+----
+
+[source, bash]
+----
+oc apply https://raw.githubusercontent.com/aboucham/activemq-artemis-tutorials/refs/heads/main/broker-jaas-loginmodule.yaml
+----
