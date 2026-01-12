@@ -53,15 +53,9 @@ spec:
     - criticalAnalyzerCheckPeriod=-1
     - criticalAnalyzerPolicy=LOG
     - addressConfigurations.samplequeue.queueConfigs.samplequeue.routingType=ANYCAST
-    - securityRoles."mops.address.*.getAddressNames".batchRole.view=true
-    - securityRoles."mops.address.batch.stream.*.getMessageCount".batchRole.view=true
-    - securityRoles."mops.address.activemq.management.*".admin.view=true
-    - securityRoles."mops.address.activemq.management.*".admin.edit=true
     - securityRoles."mops.#".admin.view=true
     - securityRoles."mops.#".admin.edit=true
     - securityRoles."mops.#".viewer.view=true
-    - securityRoles."mops.queue.*IR*.*".consoleTest.view=true
-    - securityRoles."mops.queue.*(IR|IC)*.*".consoleTest.view=true
     - securityRoles.#.admin.createAddress=true
     - securityRoles.#.admin.deleteAddress=true
     - securityRoles.#.admin.createDurableQueue=true
@@ -69,6 +63,7 @@ spec:
     - securityRoles.#.admin.createNonDurableQueue=true
     - securityRoles.#.admin.deleteNonDurableQueue=true
     - securityRoles.#.admin.send=true
+    - securityRoles.#.viewer.send=true
     - securityRoles.#.sender.send=true
     - securityRoles.#.admin.consume=true
     - securityRoles.#.consumer.consume=true
