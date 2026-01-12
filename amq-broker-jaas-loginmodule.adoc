@@ -1,0 +1,61 @@
+How to deploy AMQ Broker secured with JAAS Properties LoginModule:
+
+mkdir tmp-jaas
+cd tmp-jaas
+ cat <<"EOF" > login.config
+activemq {
+   org.apache.activemq.artemis.spi.core.security.jaas.PropertiesLoginModule sufficient
+      reload=true
+      org.apache.activemq.jaas.properties.user="new-users.properties"
+      org.apache.activemq.jaas.properties.role="new-roles.properties";
+
+   org.apache.activemq.artemis.spi.core.security.jaas.PropertiesLoginModule sufficient
+      reload=false
+      org.apache.activemq.jaas.properties.user="artemis-users.properties"
+      org.apache.activemq.jaas.properties.role="artemis-roles.properties"
+      baseDir="/home/jboss/amq-broker/etc";
+};
+EOF 
+cat <<"EOF" > new-users.properties
+ruben=ruben
+anne=anne
+rick=rick
+bob=bob
+batch=batch
+EOF
+
+cat <<"EOF" > new-roles.properties
+admin=ruben, rick
+batchRole=batch
+EOF
+
+
+cat <<"EOF" > securityroles.properties
+securityRoles.#.admin.createAddress=true
+securityRoles.#.admin.deleteAddress=true
+securityRoles.#.admin.createDurableQueue=true
+securityRoles.#.admin.deleteDurableQueue=true
+securityRoles.#.admin.createNonDurableQueue=true
+securityRoles.#.admin.deleteNonDurableQueue=true
+securityRoles.#.admin.send=true
+securityRoles.#.batchRole.send=true
+securityRoles.#.admin.consume=true
+securityRoles.#.batchRole.consume=true
+securityRoles.#.admin.browse=true
+securityRoles."activemq.management.#".admin.createNonDurableQueue=true
+securityRoles."activemq.management.#".admin.createAddress=true
+securityRoles."activemq.management.#".admin.consume=true
+securityRoles."activemq.management.#".admin.manage=true
+securityRoles."activemq.management.#".admin.send=true
+EOF
+
+oc create secret generic securityroles-settings-bp --from-file=securityroles.properties
+
+  deploymentPlan:
+    extraMounts:
+      configMaps:
+        - custom-logging-config
+      secrets:
+        - securityroles-settings-bp
+
+oc create secret generic custom-jaas-config --from-file=login.config --from-file=new-users.properties --from-file=new-roles.properties
