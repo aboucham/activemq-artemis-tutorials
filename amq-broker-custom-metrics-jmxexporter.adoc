@@ -1,15 +1,15 @@
 = Step-by-Step Tutorial: Filtering AMQ Broker Metrics using JMX Exporter on OpenShift
 
-This tutorial provides a step-by-step guide to configuring a highly customized metrics architecture for *Red Hat AMQ Broker on OpenShift Container Platform*[cite: 2, 3].
+This tutorial provides a step-by-step guide to configuring a highly customized metrics architecture for *Red Hat AMQ Broker on OpenShift Container Platform*.
 
-By default, the AMQ Broker Operator provides an internal Prometheus plugin that exports a wide baseline of metrics[cite: 168]. However, to dramatically reduce metrics noise and storage footprints, this tutorial demonstrates how to leverage an *Init Container strategic patch* [cite: 1686, 1687] to inject the *Prometheus JMX Exporter Java Agent* into your broker pods, allowing you to precisely whitelist only your high-value metrics targets (such as address sizes and consumer counts).
+By default, the AMQ Broker Operator provides an internal Prometheus plugin that exports a wide baseline of metrics. However, to dramatically reduce metrics noise and storage footprints, this tutorial demonstrates how to leverage an *Init Container strategic patch* to inject the *Prometheus JMX Exporter Java Agent* into your broker pods, allowing you to precisely whitelist only your high-value metrics targets (such as address sizes and consumer counts).
 
 == Prerequisites
 
-* [cite_start]A running OpenShift Container Platform (OCP) cluster[cite: 47].
-* The AMQ Broker Operator deployed in your namespace[cite: 324].
-* Cluster administrator privileges or standard deployment privileges in the designated project[cite: 315, 316].
-* [cite_start]A local workspace configured with the `oc` command-line interface (CLI)[cite: 115].
+* A running OpenShift Container Platform (OCP) cluster.
+* The AMQ Broker Operator deployed in your namespace.
+* Cluster administrator privileges or standard deployment privileges in the designated project.
+* A local workspace configured with the `oc` command-line interface (CLI).
 
 == Step 1: Define the JMX Exporter Filtering Rules
 
@@ -44,7 +44,7 @@ rules:
 
 == Step 2: Encapsulate the Rules into an OpenShift Secret
 
-To securely pass this customized filtration schema down into your dynamic broker runtime pods, convert the local file into a generic OpenShift secret asset[cite: 1417].
+To securely pass this customized filtration schema down into your dynamic broker runtime pods, convert the local file into a generic OpenShift secret asset.
 
 Execute the following command in your terminal:
 
@@ -55,13 +55,13 @@ $ oc create secret generic jmx-metrics-config --from-file=config.yaml=jmx-rules.
 
 == Step 3: Author and Deploy the ActiveMQArtemis Custom Resource
 
-We will now modify the core `ActiveMQArtemis` Custom Resource (CR) instance to drive the automated injection pipeline[cite: 118]. 
+We will now modify the core `ActiveMQArtemis` Custom Resource (CR) instance to drive the automated injection pipeline. 
 
 This manifest performs three key operations:
 
-1. [cite_start]*Mounts the Secret File:* Uses `extraMounts` [cite: 1425] to attach the JMX rules file to the pod file system[cite: 1453].
-2. *Declares an Init Container Strategic Patch:* Patches the underlying `StatefulSet` via `resourceTemplates` [cite: 1686, 1687] to automatically download the standard `1.5.0` JMX Prometheus Exporter JAR during pod generation[cite: 1709].
-3. *Appends Java Boot Flags:* Uses the `JAVA_ARGS_APPEND` environment variable [cite: 2129] [cite_start]to link the agent to the main JVM executable launch command[cite: 2165].
+1. *Mounts the Secret File:* Uses `extraMounts` to attach the JMX rules file to the pod file system.
+2. *Declares an Init Container Strategic Patch:* Patches the underlying `StatefulSet` via `resourceTemplates` to automatically download the standard `1.5.0` JMX Prometheus Exporter JAR during pod generation.
+3. *Appends Java Boot Flags:* Uses the `JAVA_ARGS_APPEND` environment variable to link the agent to the main JVM executable launch command.
 
 Create a deployment manifest file named `broker-deployment.yaml`:
 
@@ -128,7 +128,7 @@ spec:
                     - 'mkdir -p /amq/init/config/extra-libs && curl -Lo /amq/init/config/extra-libs/jmx_prometheus_javaagent.jar https://github.com/prometheus/jmx_exporter/releases/download/1.5.0/jmx_prometheus_javaagent-1.5.0.jar'
 ----
 
-Apply this Custom Resource manifest to your active namespace[cite: 675]:
+Apply this Custom Resource manifest to your active namespace:
 
 [source,bash]
 ----
@@ -137,9 +137,9 @@ $ oc apply -f broker-deployment.yaml
 
 == Step 4: Verify the Process Runtime Infrastructure
 
-Once the pods transition to a running state [cite: 678], verify that the Java execution command properly contains your agent and config file paths[cite: 682].
+Once the pods transition to a running state, verify that the Java execution command properly contains your agent and config file paths.
 
-Access a remote terminal shell on your running broker pod[cite: 697]:
+Access a remote terminal shell on your running broker pod:
 
 [source,bash]
 ----
@@ -182,7 +182,7 @@ artemis_consumer_count{_objectname="org.apache.activemq.artemis<broker=\"amq-bro
 
 == Step 6: Eliminate JVM Runtime Metrics Remnants (The Scraper Whitelist)
 
-Because the default Prometheus JMX Exporter client engine forces core system tracking metrics (`jvm_*` and `process_*`) into the output stream, configure an OpenShift `ServiceMonitor` wrapper to drop these metrics on arrival before they pollute your persistent dashboard databases[cite: 3267].
+Because the default Prometheus JMX Exporter client engine forces core system tracking metrics (`jvm_*` and `process_*`) into the output stream, configure an OpenShift `ServiceMonitor` wrapper to drop these metrics on arrival before they pollute your persistent dashboard databases.
 
 Create a file named `broker-servicemonitor.yaml`:
 
@@ -218,4 +218,5 @@ Deploy the monitor file to your operational project:
 $ oc apply -f broker-servicemonitor.yaml
 ----
 
-Your OpenShift cluster monitoring engine will now securely collect, filter, and archive only your explicit metrics targets [cite: 3244], maximizing both database performance and network efficiency[cite: 3243].
+Your OpenShift cluster monitoring engine will now securely collect, filter, and archive only your explicit metrics targets, maximizing both database performance and network efficiency.
+----
