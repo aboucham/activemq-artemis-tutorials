@@ -64,8 +64,7 @@ Create a deployment manifest file named `broker-deployment.yaml`:
 apiVersion: broker.amq.io/v1beta1
 kind: ActiveMQArtemis
 metadata:
-  name: broker-prod
-  namespace: amq
+  name: broker
 spec:
   adminUser: admin
   adminPassword: admin
