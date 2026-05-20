@@ -2,14 +2,14 @@
 
 This tutorial provides a step-by-step guide to configuring a highly customized metrics architecture for *Red Hat AMQ Broker on OpenShift Container Platform*.
 
-By default, the AMQ Broker Operator provides an internal Prometheus plugin that exports a wide baseline of metrics[cite: 168, 3240, 3243]. However, to dramatically reduce metrics noise and storage footprints, this tutorial demonstrates how to leverage the container image's built-in **Prometheus JMX Exporter Java Agent** (`/opt/agents/prometheus.jar`) alongside an OpenShift secret to precisely whitelist only your high-value metrics targets (such as address sizes and consumer counts).
+By default, the AMQ Broker Operator provides an internal Prometheus plugin that exports a wide baseline of metrics. However, to dramatically reduce metrics noise and storage footprints, this tutorial demonstrates how to leverage the container image's built-in **Prometheus JMX Exporter Java Agent** (`/opt/agents/prometheus.jar`) alongside an OpenShift secret to precisely whitelist only your high-value metrics targets (such as address sizes and consumer counts).
 
 == Prerequisites
 
-* [cite_start]A running OpenShift Container Platform (OCP) cluster[cite: 25].
-* The AMQ Broker Operator deployed in your namespace[cite: 25].
-* Cluster administrator privileges or standard deployment privileges in the designated project[cite: 315, 316].
-* [cite_start]A local workspace configured with the `oc` command-line interface (CLI)[cite: 115].
+* A running OpenShift Container Platform (OCP) cluster.
+* The AMQ Broker Operator deployed in your namespace.
+* Cluster administrator privileges or standard deployment privileges in the designated project.
+* A local workspace configured with the `oc` command-line interface (CLI).
 
 == Step 1: Define the JMX Exporter Filtering Rules
 
@@ -44,7 +44,7 @@ rules:
 
 == Step 2: Encapsulate the Rules into an OpenShift Secret
 
-To securely pass this customized filtration schema down into your dynamic broker runtime pods, convert the local file into a generic OpenShift secret asset[cite: 1417].
+To securely pass this customized filtration schema down into your dynamic broker runtime pods, convert the local file into a generic OpenShift secret asset.
 
 Execute the following command in your terminal:
 
@@ -55,7 +55,7 @@ $ oc create secret generic jmx-metrics-config --from-file=config.yaml=jmx-rules.
 
 == Step 3: Author and Deploy the ActiveMQArtemis Custom Resource
 
-We will now modify the core `ActiveMQArtemis` Custom Resource (CR) instance to inject our configuration[cite: 118]. Since the `prometheus.jar` agent is natively baked into the image under `/opt/agents/`, we only need to mount our rules secret via `extraMounts` [cite: 1425] and activate the agent using the `JAVA_ARGS_APPEND` environment variable[cite: 2129].
+We will now modify the core `ActiveMQArtemis` Custom Resource (CR) instance to inject our configuration. Since the `prometheus.jar` agent is natively baked into the image under `/opt/agents/`, we only need to mount our rules secret via `extraMounts` and activate the agent using the `JAVA_ARGS_APPEND` environment variable.
 
 Create a deployment manifest file named `broker-deployment.yaml`:
 
@@ -69,40 +69,40 @@ metadata:
 spec:
   adminUser: admin
   adminPassword: admin
-  version: "7.13" # Match your installed broker minor channel baseline [cite: 47]
+  version: "7.13" # Match your installed broker minor channel baseline
   
   acceptors:
     - expose: true
       name: amqp
       port: 5672
       protocols: amqp
-      sslEnabled: false # [cite: 2298]
+      sslEnabled: false
 
   console:
-    expose: true # Exposes the standard management portal endpoint [cite: 2042]
+    expose: true # Exposes the standard management portal endpoint
 
   env:
-    # Point directly to the image's pre-installed agent path at /opt/agents/prometheus.jar [cite: 2129]
+    # Point directly to the image's pre-installed agent path at /opt/agents/prometheus.jar
     - name: JAVA_ARGS_APPEND
       value: '-javaagent:/opt/agents/prometheus.jar=9404:/amq/extra/secrets/jmx-metrics-config/config.yaml'
 
   deploymentPlan:
-    size: 1 # [cite: 648]
-    persistenceEnabled: true # [cite: 653]
-    journalType: aio # [cite: 3313]
-    requireLogin: false # [cite: 650]
+    size: 1
+    persistenceEnabled: true
+    journalType: aio
+    requireLogin: false
     clustered: false
     extraMounts:
       secrets:
-        - jmx-metrics-config # Binds our secret to /amq/extra/secrets/jmx-metrics-config/ [cite: 1428, 1430]
+        - jmx-metrics-config # Binds our secret to /amq/extra/secrets/jmx-metrics-config/
 
   brokerProperties:
-    # Opt-out of standard metrics noise via underlying core settings properties [cite: 174]
+    # Opt-out of standard metrics noise via underlying core settings properties
     - addressSettings.#.enableMetrics=false
     - addressSettings.samplequeue.enableMetrics=true
 ----
 
-Apply this Custom Resource manifest to your active namespace[cite: 674]:
+Apply this Custom Resource manifest to your active namespace:
 
 [source,bash]
 ----
@@ -111,9 +111,9 @@ $ oc apply -f broker-deployment.yaml
 
 == Step 4: Verify the Process Runtime Infrastructure
 
-Once the pods transition to a running state[cite: 681], verify that the Java execution command properly contains your agent and config file paths.
+Once the pods transition to a running state, verify that the Java execution command properly contains your agent and config file paths.
 
-Access a remote terminal shell on your running broker pod[cite: 697]:
+Access a remote terminal shell on your running broker pod:
 
 [source,bash]
 ----
